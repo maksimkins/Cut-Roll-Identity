@@ -12,6 +12,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
 
     <PackageReference Include="Azure.Storage.Blobs" Version="12.21.2" />
+
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
   </ItemGroup>
 
 

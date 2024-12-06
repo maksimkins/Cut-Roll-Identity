@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace Cut_Roll_Identity.Core.Common.Extensions;
+namespace Cut_Roll_Identity.Infrastructure.Common.Extensions;
 
 public static class ConfigurationExtensions
 {
