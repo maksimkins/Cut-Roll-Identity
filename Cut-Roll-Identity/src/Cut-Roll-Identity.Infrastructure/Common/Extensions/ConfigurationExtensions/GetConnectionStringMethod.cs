@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Configuration;
 
-namespace Cut_Roll_Identity.Infrastructure.Common.Extensions;
+namespace Cut_Roll_Identity.Infrastructure.Common.ConfigurationExtensions.Extensions;
 
-public static class ConfigurationExtensions
+public static class GetConnectionStringMethod
 {
-    public static string GetConnectionStringOfThrowArgumentException(this IConfiguration configuration, string path)
+    public static string GetConnectionStringOrThrowArgumentException(this IConfiguration configuration, string path)
     {
         var connectionString = configuration.GetConnectionString(path);
 

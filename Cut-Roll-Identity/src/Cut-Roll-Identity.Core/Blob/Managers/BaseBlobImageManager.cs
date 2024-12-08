@@ -27,6 +27,6 @@ public abstract class BaseBlobImageManager<TId>
         return blobClient.Uri.ToString();
     }
 
-    abstract public Task<string> DeleteImageAsync(TId id);
-	abstract public Task<string> SetImageAsync(TId id, IFormFile? logo);
+    public abstract Task<string> DeleteImageAsync(TId id);
+	public abstract Task<string> SetImageAsync(TId id, IFormFile? logo);
 }

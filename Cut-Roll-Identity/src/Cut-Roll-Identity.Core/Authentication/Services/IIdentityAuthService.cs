@@ -1,4 +1,4 @@
-using Azure.Core;
+using Cut_Roll_Identity.Core.Common.Tokens.AccessTokens.Entities;
 using Cut_Roll_Identity.Core.Users.Models;
 using Microsoft.AspNetCore.Identity;
 

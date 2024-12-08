@@ -27,4 +27,8 @@ public interface IUserService
 
     Task PatchAvatarUrlPathAsync(string userId, string avatarPath);
 
+    Task UpdateUserRoleAsync(string userId, string roleId);
+
+    Task UpdateBanAsync(string userId, bool IsBanned);
+    Task UpdateMuteAsync(string userId, bool IsMuted);
 }
