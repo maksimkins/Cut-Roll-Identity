@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+
+  cut-roll-identity:
+    image: cut-roll-identity
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    container_name: identity_container
+    environment:
+      ASPNETCORE_URLS: http://+:80 
+      POSTGRES_CONNECTION_STRING: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB};Pooling=true;"
+      BLOB_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=${AZURE_BLOB_DEFAULT_PROTOCOL};AccountName=${AZURE_BLOB_ACCOUNT_NAME};AccountKey=${AZURE_BLOB_ACCOUNT_KEY};EndpointSuffix=${AZURE_BLOB_ENDPOINT_SUFFIX}"
+
+      JWT_KEY: "${JWT_KEY}"
+      JWT_LIFE_TIME_IN_MINUTES: "${JWT_LIFE_TIME_IN_MINUTES}"
+      JWT_ISSUER: "${JWT_ISSUER}"
+      JWT_AUDIENCE: "${JWT_AUDIENCE}"
+      RABBIT_MQ_HOSTNAME: "${RABBIT_MQ_HOSTNAME}"
+      RABBIT_MQ_USERNAME: "${RABBIT_MQ_USERNAME}"
+      RABBIT_MQ_PASSWORD: "${RABBIT_MQ_PASSWORD}"
+      DEFAULT_ADMIN_USERNAME: "${DEFAULT_ADMIN_USERNAME}"
+      DEFAULT_ADMIN_EMAIL: "${DEFAULT_ADMIN_EMAIL}"
+      DEFAULT_ADMIN_PASSWORD: "${DEFAULT_ADMIN_PASSWORD}"
+
+    ports:
+      - 5000:80
+    depends_on:
+      - postgres
+    networks:
+      - identity-network
+    restart: always
+
+  
+  postgres:
+    image: postgres:latest
+    container_name: identity_db_container
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    expose:
+      - ${POSTGRES_PORT}
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"  
+    networks:
+      - identity-network
+    volumes:
+      - identity_db_volume:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  identity_db_volume:
+
+networks:
+  identity-network:
+    driver: bridge
+

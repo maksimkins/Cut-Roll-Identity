@@ -1,25 +1,44 @@
+using Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
+using Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
+using Cut_Roll_Identity.Api.Common.Extensions.WebApplicationBuilder;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.SetupVariables();
+builder.InitMessageBroker();
 
+builder.Services.InitAspnetIdentity(builder.Configuration);
+builder.Services.InitAuth(builder.Configuration);
+builder.Services.InitSwagger();
+builder.Services.InitCors();
+
+
+builder.Services.RegisterDependencyInjection();
+builder.Services.RegisterBlobStorage(builder.Configuration);
+
+
+builder.Services.AddAuthorization();
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UpdateDb();
 
-app.UseHttpsRedirection();
+await app.SetupRoles();
+await app.SetupAdmin(builder.Configuration);
 
-app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapControllers();
+
+app.UseCors("AllowAllOrigins");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 app.Run();

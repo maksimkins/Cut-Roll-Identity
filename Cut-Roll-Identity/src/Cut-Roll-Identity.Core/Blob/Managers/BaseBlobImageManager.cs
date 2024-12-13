@@ -16,15 +16,15 @@ public abstract class BaseBlobImageManager<TId>
 
     public string GetDefaultImageUrl()
     {
-        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        var defaultImageBlobName = "default-image.png";
+        // var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        // var defaultImageBlobName = "default-image.png";
 
-        var blobClient = containerClient.GetBlobClient(defaultImageBlobName);
+        // var blobClient = containerClient.GetBlobClient(defaultImageBlobName);
         
-        if (!blobClient.Exists())
-            throw new InvalidOperationException("Default image does not exist in Blob Storage.");
+        // if (!blobClient.Exists())
+        //     throw new InvalidOperationException("Default image does not exist in Blob Storage.");
 
-        return blobClient.Uri.ToString();
+        return "";//blobClient.Uri.ToString();
     }
 
     public abstract Task<string> DeleteImageAsync(TId id);
