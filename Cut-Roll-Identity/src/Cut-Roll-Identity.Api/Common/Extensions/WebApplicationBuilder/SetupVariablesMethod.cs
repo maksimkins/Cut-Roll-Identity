@@ -24,6 +24,15 @@ public static class SetupVariablesMethod
         var default_admin_password = Environment.GetEnvironmentVariable("DEFAULT_ADMIN_PASSWORD") ?? throw new SystemException("there is no var DEFAULT_ADMIN_PASSWORD");
         
 
+        var email_port = Environment.GetEnvironmentVariable("EMAIL_PORT") ?? throw new SystemException("there is no var EMAIL_PORT");
+        var email_server = Environment.GetEnvironmentVariable("EMAIL_SERVER") ?? throw new SystemException("there is no var EMAIL_SERVER");
+        var email_user = Environment.GetEnvironmentVariable("EMAIL_USER") ?? throw new SystemException("there is no var EMAIL_USER");
+        var email_email = Environment.GetEnvironmentVariable("EMAIL_EMAIL") ?? throw new SystemException("there is no var EMAIL_EMAIL");
+        var email_name = Environment.GetEnvironmentVariable("EMAIL_NAME") ?? throw new SystemException("there is no var EMAIL_NAME");
+        var email_password = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? throw new SystemException("there is no var EMAIL_PASSWORD");
+        
+
+
         builder.Configuration["Jwt:Key"] = jwt_key;
         builder.Configuration["Jwt:LifeTimeInMinutes"] =  jwt_life_time;
         builder.Configuration["Jwt:Issuer"] = jwt_issuer;
@@ -39,6 +48,13 @@ public static class SetupVariablesMethod
         builder.Configuration["DefaultAdmin:UserName"] = default_admin_username;
         builder.Configuration["DefaultAdmin:Email"] = default_admin_email;
         builder.Configuration["DefaultAdmin:Password"] = default_admin_password;
+
+        builder.Configuration["SmtpOptions:Port"] = email_port;
+        builder.Configuration["SmtpOptions:Server"] = email_server;
+        builder.Configuration["SmtpOptions:User"] = email_user;
+        builder.Configuration["SmtpOptions:Email"] = email_email;
+        builder.Configuration["SmtpOptions:Name"] = email_name;
+        builder.Configuration["SmtpOptions:Password"] = email_password;
         
     }
 }
