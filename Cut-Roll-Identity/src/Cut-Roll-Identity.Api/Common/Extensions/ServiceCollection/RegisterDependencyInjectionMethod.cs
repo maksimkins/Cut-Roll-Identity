@@ -13,6 +13,7 @@ using Cut_Roll_Identity.Infrastructure.Common.Tokens.RefreshTokens.Services;
 using Cut_Roll_Identity.Infrastructure.Roles.Services;
 using Cut_Roll_Identity.Infrastructure.Users.Managers;
 using Cut_Roll_Identity.Infrastructure.Users.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
 
@@ -30,6 +31,7 @@ public static class RegisterDependencyInjectionMethod
         serviceCollection.AddTransient<BaseBlobImageManager<string>, UserImageManager>();
         
         serviceCollection.AddTransient<IMessageBrokerService, RabbitMqService>();
+        serviceCollection.AddSingleton<IEmailSender, EmailSender>();
         
         serviceCollection.AddHostedService<UserRabbitMqService>();
         serviceCollection.AddHostedService<RoleRabbitMqService>();
