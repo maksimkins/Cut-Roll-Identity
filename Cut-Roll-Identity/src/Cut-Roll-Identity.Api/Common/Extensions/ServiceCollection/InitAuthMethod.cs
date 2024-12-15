@@ -9,7 +9,7 @@ public static class InitAuthMethod
 {
     public static void InitAuth(this IServiceCollection serviceCollection, IConfiguration configuration)
     {
-        var jwtSection = configuration.GetSection("Jwt");
+        var jwtSection = configuration.GetSection("Jwt") ?? throw new ArgumentNullException("cannot find section Jwt");
         serviceCollection.Configure<JwtOptions>(jwtSection);
 
         serviceCollection.AddAuthentication(options =>
