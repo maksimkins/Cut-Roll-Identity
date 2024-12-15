@@ -25,10 +25,17 @@ public interface IUserService
 
     Task<IdentityResult> UpdateUserAsync(User userDto, Guid refresh);
 
+    Task<IdentityResult> ConfirmEmailAsync(User user, string token);
+
     Task PatchAvatarUrlPathAsync(string userId, string avatarPath);
 
     Task UpdateUserRoleAsync(string userId, string roleId);
 
     Task UpdateBanAsync(string userId, bool IsBanned);
+
     Task UpdateMuteAsync(string userId, bool IsMuted);
+
+    Task<string> GenerateEmailConfirmationTokenAsync(User user);
+
+    Task<int> GetCountAsync();
 }

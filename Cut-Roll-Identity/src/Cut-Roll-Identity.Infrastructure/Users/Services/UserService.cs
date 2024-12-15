@@ -7,6 +7,7 @@ using Cut_Roll_Identity.Core.Roles.Models;
 using Cut_Roll_Identity.Core.Users.Models;
 using Cut_Roll_Identity.Core.Users.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cut_Roll_Identity.Infrastructure.Users.Services;
 
@@ -168,5 +169,23 @@ public class UserService : IUserService
         user.IsMuted = IsMuted;
 
         await _userManager.UpdateAsync(user);
+    }
+
+    public async Task<string> GenerateEmailConfirmationTokenAsync(User user)
+    {
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+        return token;
+    }
+
+    public async Task<IdentityResult> ConfirmEmailAsync(User user, string token)
+    {
+        return await _userManager.ConfirmEmailAsync(user, token);
+    }
+
+    public async Task<int> GetCountAsync()
+    {
+        var userCount = await _userManager.Users.CountAsync();
+        return userCount;
     }
 }

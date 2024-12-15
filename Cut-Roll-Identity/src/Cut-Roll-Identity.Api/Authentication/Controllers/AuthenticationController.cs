@@ -7,6 +7,8 @@ using Cut_Roll_Identity.Infrastructure.Identities.Dtos;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
 
 namespace Cut_Roll_Identity.Api.Authentication.Controllers;
 
@@ -17,12 +19,14 @@ public class AuthenticationController : ControllerBase
 {
     private readonly IIdentityAuthService _identityAuthService;
     private readonly BaseBlobImageManager<string> _userImageManager;
-
+    private readonly IEmailSender _emailSender;
     public AuthenticationController(
         IIdentityAuthService identityAuthService,
-        BaseBlobImageManager<string> userImageManager
+        BaseBlobImageManager<string> userImageManager,
+        IEmailSender emailSender
     )
     {
+        _emailSender = emailSender;
         _identityAuthService = identityAuthService;
         _userImageManager = userImageManager;
     }
@@ -53,10 +57,6 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    private IActionResult InternalServerError(string message)
-    {
-        throw new NotImplementedException();
-    }
 
     [HttpPost]
     public async Task<IActionResult> RegistrationAsync([Required, FromBody] RegistrationDto registrationDto)
@@ -70,9 +70,41 @@ public class AuthenticationController : ControllerBase
                 AvatarPath = _userImageManager.GetDefaultImageUrl(),
             };
 
-            var result = await _identityAuthService.RegisterAsync(user, registrationDto.Password);
+            var confirmationToken = await _identityAuthService.RegisterAsync(user, registrationDto.Password);
 
-            return result.Succeeded ? Ok() : BadRequest(result.Errors);
+            var confirmationLink = Url.Action(
+                "ConfirmEmail",
+                "Authentication",
+                new { userId = user.Id, token = confirmationToken },
+                protocol: HttpContext.Request.Scheme
+            );
+    
+           await _identityAuthService.SendConfirmationEmail(user.Email, confirmationLink!);
+
+            return Ok();
+        }
+        catch(ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+        catch(InvalidCredentialException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+        catch(Exception exception)
+        {
+            return this.InternalServerError(exception.Message);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ConfirmEmail(string userId, string token)
+    {
+        try
+        {
+            var result = await _identityAuthService.ConfirmEmail(userId, token);
+
+            return result.Succeeded ? Ok() : BadRequest(error: result.Errors);
         }
         catch(ArgumentException exception)
         {

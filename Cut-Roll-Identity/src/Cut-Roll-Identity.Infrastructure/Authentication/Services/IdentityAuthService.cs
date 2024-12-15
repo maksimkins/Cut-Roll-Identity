@@ -13,7 +13,9 @@ using Cut_Roll_Identity.Core.Users.Models;
 using Cut_Roll_Identity.Core.Users.Services;
 using Cut_Roll_Identity.Infrastructure.Common.Extensions.IdentityAuthServiceExtensions;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -27,6 +29,7 @@ public class IdentityAuthService : IIdentityAuthService
     private readonly IMessageBrokerService _messageBrokerService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IRoleService _roleService;
+    private readonly IEmailSender _emailSender;
 
     public IdentityAuthService(
         SignInManager<User> signInManager, 
@@ -34,7 +37,8 @@ public class IdentityAuthService : IIdentityAuthService
         IOptionsSnapshot<JwtOptions> jwtOptionsSnapshot,
         IRefreshTokenService refreshTokenService,
         IMessageBrokerService messageBrokerService,
-        IRoleService roleService
+        IRoleService roleService,
+        IEmailSender emailSender
         )
     {
         _refreshTokenService = refreshTokenService;
@@ -43,9 +47,10 @@ public class IdentityAuthService : IIdentityAuthService
         _jwtOptions = jwtOptionsSnapshot.Value;
         _messageBrokerService = messageBrokerService;
         _roleService = roleService;
+        _emailSender = emailSender;
     }
 
-    public async Task<IdentityResult> RegisterAsync(User user, string password) {
+    public async Task<string> RegisterAsync(User user, string password) {
         
         var defaultRole = UserRoles.User;
         var defaultRoleId = await _roleService.GetRoleIdByName(defaultRole);
@@ -54,32 +59,62 @@ public class IdentityAuthService : IIdentityAuthService
 
         if(!creationResult.Succeeded)
         {
-            return creationResult;
+            var errorMessages = string.Join(", ", creationResult.Errors.Select(e => e.Description));
+            throw new ArgumentException(message: errorMessages) ;
         }
         
         var roleAssignResult = await _userService.AssignRoleToUserAsync(user.Id, defaultRole);
 
         var result = creationResult.Succeeded && roleAssignResult.Succeeded;
 
-        if(result)
+        if(!result)
         {
-            await _messageBrokerService.PushAsync("user_create_admin", new {
-                UserName = user.UserName,
-                Id = user.Id,
-                RoleId = defaultRoleId,
-                Email = user.Email,
-                IsBanned = false,
-                IsMuted = false,
-            });
+            var errors = new List<IdentityError>();
+
+            errors.AddRange(creationResult.Errors);
+            errors.AddRange(roleAssignResult.Errors);
+
+            return string.Join("; ", errors.Select(e => e.Description));;
         }
 
-        var errors = new List<IdentityError>();
+        await _messageBrokerService.PushAsync("user_create_admin", new {
+            UserName = user.UserName,
+            Id = user.Id,
+            RoleId = defaultRoleId,
+            Email = user.Email,
+            IsBanned = false,
+            IsMuted = false,
+        });
 
-        errors.AddRange(creationResult.Errors);
-        errors.AddRange(roleAssignResult.Errors);
+        var token = await _userService.GenerateEmailConfirmationTokenAsync(user);
 
-        return result ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray());
+        return token;
     }
+
+    public async Task SendConfirmationEmail(string email, string? confirmationLink) 
+    {
+        confirmationLink = confirmationLink ?? throw new Exception("cannot build confiramtion link"); 
+        await _emailSender.SendEmailAsync(email, "Email Confirmation", $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
+    }
+
+    public async Task<IdentityResult> ConfirmEmail(string userId, string token)
+    {
+        if (userId == null || token == null)
+        {
+            throw new ArgumentException(message: "userId or token is null");
+        }
+
+        var user = await _userService.GetUserByIdAsync(userId);
+        if (user == null)
+        {
+            throw new ArgumentException(message: "cannot find user with provided id");
+        }
+
+        var result = await _userService.ConfirmEmailAsync(user, token);
+        
+        return result;
+    }
+
 
     public async Task<AccessToken> SignInAsync(string identifier, string password, bool rememberMe)
     {
