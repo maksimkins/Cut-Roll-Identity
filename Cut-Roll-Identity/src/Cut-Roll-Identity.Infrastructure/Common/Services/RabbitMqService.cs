@@ -14,7 +14,6 @@ public class RabbitMqService : IMessageBrokerService
 
     public RabbitMqService(IOptionsSnapshot<RabbitMqOptions> optionsSnapshot)
     {
-
         this.rabbitMqConnectionFactory = new ConnectionFactory() {
             HostName = optionsSnapshot.Value.HostName,
             UserName = optionsSnapshot.Value.UserName,

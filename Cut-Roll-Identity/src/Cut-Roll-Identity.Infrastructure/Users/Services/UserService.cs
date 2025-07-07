@@ -27,39 +27,47 @@ public class UserService : IUserService
         _messageBrokerService = messageBrokerService;
     }
 
-    public async Task<IdentityResult> CreateUserAsync(User user, string password)
+    public async Task<IdentityResult> CreateUserAsync(User user, string? password)
     {
-        return await _userManager.CreateAsync(user, password);
+        return  password == null ? await _userManager.CreateAsync(user) : await _userManager.CreateAsync(user, password);
     }
     public async Task<IList<string>> GetRolesByUsernameAsync(string username)
     {
         var user  = await GetUserByUsernameAsync(username: username); 
+        if (user == null)
+        {
+            throw new ArgumentException($"User with username {username} not found.");
+        }
         return await _userManager.GetRolesAsync(user);
     }
 
     public async Task<IList<string>> GetRolesByEmailAsync(string email)
     {
         var user  = await GetUserByEmailAsync(email: email); 
+        if (user == null)
+        {
+            throw new ArgumentException($"User with email {email} not found.");
+        }
         return await _userManager.GetRolesAsync(user);
     }
 
-    public async Task<User> GetUserByIdAsync(string userId)
+    public async Task<User?> GetUserByIdAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId) ?? throw new ArgumentException($"cannot find user with id: {userId}");
+        var user = await _userManager.FindByIdAsync(userId);
 
         return user;
     }
 
-    public async Task<User> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        var user = await _userManager.FindByNameAsync(username) ?? throw new ArgumentException($"cannot find user with username: {username}"); 
+        var user = await _userManager.FindByNameAsync(username); 
 
         return user;
     }
 
-    public async Task<User> GetUserByEmailAsync(string email)
+    public async Task<User?> GetUserByEmailAsync(string email)
     {
-        var user = await _userManager.FindByEmailAsync(email) ?? throw new ArgumentException($"cannot find user with email: {email}"); 
+        var user = await _userManager.FindByEmailAsync(email);
 
         return user;
     }

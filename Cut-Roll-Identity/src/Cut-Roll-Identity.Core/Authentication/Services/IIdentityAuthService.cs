@@ -6,15 +6,12 @@ namespace Cut_Roll_Identity.Core.Authentication.Services;
 
 public interface IIdentityAuthService
 {
-    Task<string> RegisterAsync(User user, string password);
-
-    Task<AccessToken> SignInAsync(string username, string password, bool rememberMe);
-    
-    Task<Guid> SignOutAsync(Guid refresh, string jwt);
-
-    Task<AccessToken> UpdateToken(Guid refresh, string jwt);
-
+    public Task RegisterAsync(User user, string password);
+    public Task<AccessToken> SignInAsync(string username, string password, bool rememberMe);
+    public Task<AccessToken> SignInWithExternalProviderAsync(string? email, string? name, string? externalId);
+    public Task<Guid> SignOutAsync(Guid refresh, string jwt);
+    public Task<AccessToken> UpdateToken(Guid refresh, string jwt);
     public Task SendConfirmationEmail(string email, string? confirmationLink);
-    
     public Task<IdentityResult> ConfirmEmail(string userId, string token);
+    public Task<string> GenerateEmailConfirmationTokenAsync(User? user);
 }

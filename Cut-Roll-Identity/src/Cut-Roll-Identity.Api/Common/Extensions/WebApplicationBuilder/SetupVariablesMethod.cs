@@ -9,7 +9,7 @@ public static class SetupVariablesMethod
     {
         var postgresConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING") ?? throw new SystemException("there is no var POSTGRES_CONNECTION_STRING");
         var azureConnectionString = Environment.GetEnvironmentVariable("BLOB_STORAGE_CONNECTION_STRING") ?? throw new SystemException("there is no var BLOB_STORAGE_CONNECTION_STRING");
-        
+
         var jwt_key = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new SystemException("there is no var JWT_KEY");
         var jwt_life_time = Environment.GetEnvironmentVariable("JWT_LIFE_TIME_IN_MINUTES") ?? throw new SystemException("there is no var JWT_LIFE_TIME_IN_MINUTES");
         var jwt_issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new SystemException("there is no var JWT_ISSUER");
@@ -22,7 +22,7 @@ public static class SetupVariablesMethod
         var default_admin_username = Environment.GetEnvironmentVariable("DEFAULT_ADMIN_USERNAME") ?? throw new SystemException("there is no var DEFAULT_ADMIN_USERNAME");
         var default_admin_email = Environment.GetEnvironmentVariable("DEFAULT_ADMIN_EMAIL") ?? throw new SystemException("there is no var DEFAULT_ADMIN_EMAIL");
         var default_admin_password = Environment.GetEnvironmentVariable("DEFAULT_ADMIN_PASSWORD") ?? throw new SystemException("there is no var DEFAULT_ADMIN_PASSWORD");
-        
+
 
         var email_port = Environment.GetEnvironmentVariable("EMAIL_PORT") ?? throw new SystemException("there is no var EMAIL_PORT");
         var email_server = Environment.GetEnvironmentVariable("EMAIL_SERVER") ?? throw new SystemException("there is no var EMAIL_SERVER");
@@ -30,11 +30,14 @@ public static class SetupVariablesMethod
         var email_email = Environment.GetEnvironmentVariable("EMAIL_EMAIL") ?? throw new SystemException("there is no var EMAIL_EMAIL");
         var email_name = Environment.GetEnvironmentVariable("EMAIL_NAME") ?? throw new SystemException("there is no var EMAIL_NAME");
         var email_password = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? throw new SystemException("there is no var EMAIL_PASSWORD");
-        
+
+        var google_oauth_client_id = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_ID") ?? throw new SystemException("there is no var GOOGLE_OAUTH_CLIENT_ID");
+        var google_oauth_client_secret = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_SECRET") ?? throw new SystemException("there is no var GOOGLE_OAUTH_CLIENT_SECRET");
+        var google_oauth_callback_path = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CALLBACK_PATH") ?? throw new SystemException("there is no var GOOGLE_OAUTH_CALLBACK_PATH");
 
 
         builder.Configuration["Jwt:Key"] = jwt_key;
-        builder.Configuration["Jwt:LifeTimeInMinutes"] =  jwt_life_time;
+        builder.Configuration["Jwt:LifeTimeInMinutes"] = jwt_life_time;
         builder.Configuration["Jwt:Issuer"] = jwt_issuer;
         builder.Configuration["Jwt:Audience"] = jwt_audience;
 
@@ -55,6 +58,9 @@ public static class SetupVariablesMethod
         builder.Configuration["SmtpOptions:Email"] = email_email;
         builder.Configuration["SmtpOptions:Name"] = email_name;
         builder.Configuration["SmtpOptions:Password"] = email_password;
-        
+
+        builder.Configuration["OAuth:GoogleOAuth:ClientId"] = google_oauth_client_id;
+        builder.Configuration["OAuth:GoogleOAuth:ClientSecret"] = google_oauth_client_secret;
+        builder.Configuration["OAuth:GoogleOAuth:CallbackPath"] = google_oauth_callback_path;
     }
 }

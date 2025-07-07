@@ -7,17 +7,17 @@ namespace Cut_Roll_Identity.Core.Users.Services;
 
 public interface IUserService
 {
-    Task<IdentityResult> CreateUserAsync(User user, string password);
+    Task<IdentityResult> CreateUserAsync(User user, string? password);
 
     Task<IList<string>> GetRolesByUsernameAsync(string username);
 
     Task<IList<string>> GetRolesByEmailAsync(string email);
 
-    Task<User> GetUserByIdAsync(string userId);
+    Task<User?> GetUserByIdAsync(string userId);
 
-    Task<User> GetUserByUsernameAsync(string username);
+    Task<User?> GetUserByUsernameAsync(string username);
 
-    Task<User> GetUserByEmailAsync(string email);
+    Task<User?> GetUserByEmailAsync(string email);
 
     Task<IdentityResult> AddUserClaimAsync(User user, Claim claim);
 

@@ -29,6 +29,9 @@ services:
       EMAIL_EMAIL: "${EMAIL_EMAIL}"
       EMAIL_NAME: "${EMAIL_NAME}"
       EMAIL_PASSWORD: "${EMAIL_PASSWORD}"
+      GOOGLE_OAUTH_CLIENT_ID: "${GOOGLE_OAUTH_CLIENT_ID}"
+      GOOGLE_OAUTH_CLIENT_SECRET: "${GOOGLE_OAUTH_CLIENT_SECRET}"
+      GOOGLE_OAUTH_CALLBACK_PATH: "${GOOGLE_OAUTH_CALLBACK_PATH}"
       
 
     ports:
@@ -37,8 +40,8 @@ services:
       - postgres
     networks:
       - identity-network
-    restart: always
 
+    restart: always
   
   postgres:
     image: postgres:latest
@@ -56,11 +59,14 @@ services:
     volumes:
       - identity_db_volume:/var/lib/postgresql/data
     restart: always
-
+  
 volumes:
   identity_db_volume:
 
 networks:
   identity-network:
-    driver: bridge
+    external: true
+    #external: true
+    #name: rabbitmq_identity-network
+      
 

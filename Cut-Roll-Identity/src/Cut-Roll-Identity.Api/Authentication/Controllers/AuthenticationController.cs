@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 
 namespace Cut_Roll_Identity.Api.Authentication.Controllers;
 
@@ -70,7 +72,8 @@ public class AuthenticationController : ControllerBase
                 AvatarPath = _userImageManager.GetDefaultImageUrl(),
             };
 
-            var confirmationToken = await _identityAuthService.RegisterAsync(user, registrationDto.Password);
+            await _identityAuthService.RegisterAsync(user, registrationDto.Password);
+            var confirmationToken = await _identityAuthService.GenerateEmailConfirmationTokenAsync(user);
 
             var confirmationLink = Url.Action(
                 "ConfirmEmail",
@@ -79,7 +82,7 @@ public class AuthenticationController : ControllerBase
                 protocol: HttpContext.Request.Scheme
             );
     
-           await _identityAuthService.SendConfirmationEmail(user.Email, confirmationLink!);
+            await _identityAuthService.SendConfirmationEmail(user.Email, confirmationLink!);
 
             return Ok();
         }
@@ -96,6 +99,40 @@ public class AuthenticationController : ControllerBase
             return this.InternalServerError(exception.Message);
         }
     }
+
+    [HttpGet]
+    public async Task<IActionResult> ExternalLoginCallback()
+    {
+        //try
+        //{
+            var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+
+             if (!result.Succeeded || result?.Principal == null)
+                return Unauthorized("Google authentication failed");
+
+            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+            var name = result.Principal.FindFirstValue(ClaimTypes.Name);
+            var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId);
+
+            return Ok(accessToken);
+        //}
+        //catch (Exception ex)
+        //{
+        //    return this.InternalServerError(ex.Message);
+        //}
+    }
+
+
+    [HttpGet]
+    public IActionResult ExternalLogin()
+    {
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authentication");
+        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+        return Challenge(properties, "Google");
+    }
+
 
     [HttpGet]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
