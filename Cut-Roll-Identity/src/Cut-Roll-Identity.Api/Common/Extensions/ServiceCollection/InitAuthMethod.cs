@@ -62,6 +62,7 @@ public static class InitAuthMethod
                 (policyBuilder) => {
                     policyBuilder.RequireAuthenticatedUser();
                     policyBuilder.RequireClaim("IsMuted");
+                    policyBuilder.RequireClaim("EmailConfirmed");
                     policyBuilder.RequireClaim(ClaimTypes.Email);
                     policyBuilder.RequireClaim(ClaimTypes.Name);
                     policyBuilder.RequireClaim(ClaimTypes.NameIdentifier);
