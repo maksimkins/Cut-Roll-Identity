@@ -103,8 +103,8 @@ public class AuthenticationController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> ExternalLoginCallback()
     {
-        //try
-        //{
+        try
+        {
             var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
 
              if (!result.Succeeded || result?.Principal == null)
@@ -117,11 +117,11 @@ public class AuthenticationController : ControllerBase
             var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId);
 
             return Ok(accessToken);
-        //}
-        //catch (Exception ex)
-        //{
-        //    return this.InternalServerError(ex.Message);
-        //}
+        }
+        catch (Exception ex)
+        {
+           return this.InternalServerError(ex.Message);
+        }
     }
 
 

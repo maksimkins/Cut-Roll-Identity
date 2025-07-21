@@ -136,8 +136,9 @@ public class IdentityAuthService : IIdentityAuthService
             .Select(roleStr => new Claim(ClaimTypes.Role, roleStr))
             .Append(new Claim(ClaimTypes.NameIdentifier, user.Id))
             .Append(new Claim(ClaimTypes.Email, user.Email ?? "not set"))
-            .Append(new Claim("IsMuted", $"{user.IsMuted}" ?? "not set"))
-            .Append(new Claim(ClaimTypes.Name, user.UserName ?? "not set"));
+            .Append(new Claim("IsMuted", user.IsMuted.ToString() ?? "not set"))
+            .Append(new Claim(ClaimTypes.Name, user.UserName ?? "not set"))
+            .Append(new Claim("EmailConfirmed", user.EmailConfirmed.ToString() ?? "not set"));
 
         var signingKey = new SymmetricSecurityKey(_jwtOptions.KeyInBytes);
         var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
@@ -155,7 +156,7 @@ public class IdentityAuthService : IIdentityAuthService
 
         var refresh = await _refreshTokenService.CreateAsync(new RefreshToken
         {
-            UserId = user.Id,
+            UserId = user.Id
         });
 
         return new AccessToken
@@ -202,6 +203,9 @@ public class IdentityAuthService : IIdentityAuthService
 
         if (user.IsBanned)
             throw new AuthenticationFailureException("Account is banned!");
+        
+        if (user.EmailConfirmed == false)
+            throw new AuthenticationFailureException("Email is not confirmed!");
 
         if (!result.Succeeded)
             throw new InvalidCredentialException("Invalid credentials!");
@@ -216,7 +220,8 @@ public class IdentityAuthService : IIdentityAuthService
             .Append(new Claim(ClaimTypes.NameIdentifier, user.Id))
             .Append(new Claim(ClaimTypes.Email, user.Email ?? "not set"))
             .Append(new Claim("IsMuted", $"{user.IsMuted}" ?? "not set"))
-            .Append(new Claim(ClaimTypes.Name, user.UserName ?? "not set"));
+            .Append(new Claim(ClaimTypes.Name, user.UserName ?? "not set"))
+            .Append(new Claim("EmailConfirmed", user.EmailConfirmed.ToString() ?? "not set"));;
 
         var signingKey = new SymmetricSecurityKey(_jwtOptions.KeyInBytes);
         var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
