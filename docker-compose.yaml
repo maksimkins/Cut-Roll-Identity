@@ -66,7 +66,5 @@ volumes:
 networks:
   microservices-network:
     external: true
-    #external: true
-    #name: rabbitmq_identity-network
       
 
