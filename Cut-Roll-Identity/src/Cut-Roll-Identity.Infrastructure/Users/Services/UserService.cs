@@ -51,23 +51,23 @@ public class UserService : IUserService
         return await _userManager.GetRolesAsync(user);
     }
 
-    public async Task<User?> GetUserByIdAsync(string userId)
+    public async Task<User> GetUserByIdAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _userManager.FindByIdAsync(userId) ?? throw new ArgumentException($"cannot find user with id: {userId}");
 
         return user;
     }
 
-    public async Task<User?> GetUserByUsernameAsync(string username)
+    public async Task<User> GetUserByUsernameAsync(string username)
     {
-        var user = await _userManager.FindByNameAsync(username); 
+        var user = await _userManager.FindByNameAsync(username) ?? throw new ArgumentException($"cannot find user with username: {username}"); 
 
         return user;
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
+    public async Task<User> GetUserByEmailAsync(string email)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await _userManager.FindByEmailAsync(email) ?? throw new ArgumentException($"cannot find user with email: {email}");
 
         return user;
     }

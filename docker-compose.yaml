@@ -39,7 +39,7 @@ services:
     depends_on:
       - postgres
     networks:
-      - identity-network
+      - microservices-network
 
     restart: always
   
@@ -55,7 +55,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"  
     networks:
-      - identity-network
+      - microservices-network
     volumes:
       - identity_db_volume:/var/lib/postgresql/data
     restart: always
@@ -64,7 +64,7 @@ volumes:
   identity_db_volume:
 
 networks:
-  identity-network:
+  microservices-network:
     external: true
     #external: true
     #name: rabbitmq_identity-network

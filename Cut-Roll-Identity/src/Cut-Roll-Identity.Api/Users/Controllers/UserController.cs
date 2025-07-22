@@ -127,7 +127,7 @@ public class UserController : ControllerBase
             var user = await _userService.GetUserByIdAsync(userId);
 
             return Ok(new {
-                AvatarUrlPath = user.AvatarPath,
+                AvatarUrlPath = user?.AvatarPath,
             });
         }       
         catch(ArgumentException exception)
