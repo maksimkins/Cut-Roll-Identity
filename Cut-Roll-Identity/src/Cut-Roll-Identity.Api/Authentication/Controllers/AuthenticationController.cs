@@ -51,7 +51,7 @@ public class AuthenticationController : ControllerBase
         }
         catch(AuthenticationFailureException exeption)
         {
-            return Forbid(exeption.Message);
+            return Unauthorized(new { message = exeption.Message });
         }
         catch (Exception exception)
         {
