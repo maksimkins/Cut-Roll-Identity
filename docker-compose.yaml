@@ -64,5 +64,3 @@ volumes:
 networks:
   microservices-network:
     external: true
-      
-
