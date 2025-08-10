@@ -18,10 +18,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore Dependencies
-        run: dotnet restore Cut-Roll-Identity\src\Cut-Roll-Identity.Api\Cut-Roll-Identity.Api.csproj
+        run: dotnet restore Cut-Roll-Identity/src/Cut-Roll-Identity.Api/Cut-Roll-Identity.Api.csproj
 
       - name: Build Project
-        run: dotnet build Cut-Roll-Identity\src\Cut-Roll-Identity.Api\Cut-Roll-Identity.Api.csproj--no-restore --configuration Release
+        run: dotnet build Cut-Roll-Identity/src/Cut-Roll-Identity.Api/Cut-Roll-Identity.Api.csproj --no-restore --configuration Release
 
   deploy:
     name: Build and Push Docker image
