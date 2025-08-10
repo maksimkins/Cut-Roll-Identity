@@ -1,7 +1,7 @@
 services:
 
   cut-roll-identity:
-    image: cut-roll-identity
+    image: makedoniaz/cut-roll-identity:latest
     build:
       context: .
       dockerfile: app.Dockerfile
