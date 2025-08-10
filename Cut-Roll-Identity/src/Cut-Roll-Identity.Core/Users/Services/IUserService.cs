@@ -13,11 +13,11 @@ public interface IUserService
 
     Task<IList<string>> GetRolesByEmailAsync(string email);
 
-    Task<User?> GetUserByIdAsync(string userId);
+    Task<User> GetUserByIdAsync(string userId);
 
-    Task<User?> GetUserByUsernameAsync(string username);
+    Task<User> GetUserByUsernameAsync(string username);
 
-    Task<User?> GetUserByEmailAsync(string email);
+    Task<User> GetUserByEmailAsync(string email);
 
     Task<IdentityResult> AddUserClaimAsync(User user, Claim claim);
 

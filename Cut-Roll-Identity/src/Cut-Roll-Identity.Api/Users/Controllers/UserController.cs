@@ -1,14 +1,13 @@
-
+namespace Cut_Roll_Identity.Api.Users.Controllers;
 
 using System.Security.Claims;
+using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
 using Cut_Roll_Identity.Core.Blob.Managers;
 using Cut_Roll_Identity.Core.Users.Dtos;
 using Cut_Roll_Identity.Core.Users.Models;
 using Cut_Roll_Identity.Core.Users.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
-namespace Cut_Roll_Identity.Api.Users.Controllers;
 
 [ApiController]
 [Route("/api/[controller]/[action]")]
@@ -52,10 +51,6 @@ public class UserController : ControllerBase
         }
     }
 
-    private IActionResult InternalServerError(string message)
-    {
-        throw new NotImplementedException();
-    }
 
     [HttpPut("/api/[controller]")]
     [Authorize]
@@ -127,7 +122,7 @@ public class UserController : ControllerBase
             var user = await _userService.GetUserByIdAsync(userId);
 
             return Ok(new {
-                AvatarUrlPath = user.AvatarPath,
+                AvatarUrlPath = user?.AvatarPath,
             });
         }       
         catch(ArgumentException exception)
