@@ -1,0 +1,57 @@
+name: Restore, Build, Test and Deploy dotnet WebApi app
+
+on:
+  push:
+
+jobs:
+  restore_build_test:
+    name: Restore Dependencies, Build Project and Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup dotnet 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore Cut-Roll-Identity\src\Cut-Roll-Identity.Api\Cut-Roll-Identity.Api.csproj
+
+      - name: Build Project
+        run: dotnet build Cut-Roll-Identity\src\Cut-Roll-Identity.Api\Cut-Roll-Identity.Api.csproj--no-restore --configuration Release
+
+  deploy:
+    name: Build and Push Docker image
+    runs-on: ubuntu-latest
+    needs: [restore_build_test]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Docker Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
+
+      - name: Build Image
+        run: docker build -f Dockerfile -t ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.IMAGE_NAME}}:latest .
+
+      - name: Push Image
+        run: docker push ${{secrets.DOCKERHUB_USERNAME}}/${{secrets.IMAGE_NAME}}:latest
+
+      - name: Connect to VM with SSH, update and run docker containers
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            cd /home/azureuser/Cut-Roll-Identity
+            echo "${{ secrets.SSH_PASSWORD }}" | sudo -S docker compose pull
+            echo "${{ secrets.SSH_PASSWORD }}" | sudo -S docker compose down
+            echo "${{ secrets.SSH_PASSWORD }}" | sudo -S docker compose up -d
