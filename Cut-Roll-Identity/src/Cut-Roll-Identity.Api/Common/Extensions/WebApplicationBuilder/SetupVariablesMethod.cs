@@ -35,6 +35,10 @@ public static class SetupVariablesMethod
         var google_oauth_client_secret = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_SECRET") ?? throw new SystemException("there is no var GOOGLE_OAUTH_CLIENT_SECRET");
         var google_oauth_callback_path = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CALLBACK_PATH") ?? throw new SystemException("there is no var GOOGLE_OAUTH_CALLBACK_PATH");
 
+        var redirect_scheme = Environment.GetEnvironmentVariable("REDIRECT_SCHEME") ?? throw new SystemException("there is no var REDIRECT_SCHEME");
+        var redirect_host = Environment.GetEnvironmentVariable("REDIRECT_HOST") ?? throw new SystemException("there is no var REDIRECT_HOST");
+        var redirect_port = Environment.GetEnvironmentVariable("REDIRECT_PORT") ?? throw new SystemException("there is no var REDIRECT_PORT");
+        var redirect_path = Environment.GetEnvironmentVariable("REDIRECT_PATH") ?? throw new SystemException("there is no var REDIRECT_PATH");
 
         builder.Configuration["Jwt:Key"] = jwt_key;
         builder.Configuration["Jwt:LifeTimeInMinutes"] = jwt_life_time;
@@ -62,5 +66,10 @@ public static class SetupVariablesMethod
         builder.Configuration["OAuth:GoogleOAuth:ClientId"] = google_oauth_client_id;
         builder.Configuration["OAuth:GoogleOAuth:ClientSecret"] = google_oauth_client_secret;
         builder.Configuration["OAuth:GoogleOAuth:CallbackPath"] = google_oauth_callback_path;
+
+        builder.Configuration["Redirect:Scheme"] = redirect_scheme;
+        builder.Configuration["Redirect:Host"] = redirect_host; 
+        builder.Configuration["Redirect:Port"] = redirect_port;
+        builder.Configuration["Redirect:Path"] = redirect_path;
     }
 }

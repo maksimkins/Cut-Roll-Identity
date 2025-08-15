@@ -12,7 +12,7 @@ builder.Services.InitAuth(builder.Configuration);
 builder.Services.InitSwagger();
 builder.Services.InitCors();
 
-builder.Services.ConfigureEmailSender(builder.Configuration);
+builder.Services.ConfigureServices(builder.Configuration);
 builder.Services.RegisterDependencyInjection();
 builder.Services.RegisterBlobStorage(builder.Configuration);
 

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using Cut_Roll_Identity.Api.Common.Configurations;
 
 namespace Cut_Roll_Identity.Api.Authentication.Controllers;
 
@@ -21,14 +22,14 @@ public class AuthenticationController : ControllerBase
 {
     private readonly IIdentityAuthService _identityAuthService;
     private readonly BaseBlobImageManager<string> _userImageManager;
-    private readonly IEmailSender _emailSender;
+    private readonly RedirectConfiguration _redirectConfig;
     public AuthenticationController(
         IIdentityAuthService identityAuthService,
         BaseBlobImageManager<string> userImageManager,
-        IEmailSender emailSender
+        RedirectConfiguration redirectConfig
     )
     {
-        _emailSender = emailSender;
+        _redirectConfig = redirectConfig;
         _identityAuthService = identityAuthService;
         _userImageManager = userImageManager;
     }
@@ -116,7 +117,16 @@ public class AuthenticationController : ControllerBase
         
             var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId);
 
-            return Ok(accessToken);
+            var frontendUrl = new UriBuilder
+            {
+                Scheme = _redirectConfig.Scheme,
+                Host = _redirectConfig.Host,
+                Port = _redirectConfig.Port,
+                Path = _redirectConfig.Path,
+                Query = $"jwt={accessToken.Jwt}&refresh={accessToken.Refresh}"
+            }.ToString();
+
+            return Redirect(frontendUrl);
         }
         catch (Exception ex)
         {
