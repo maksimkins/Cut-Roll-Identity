@@ -121,7 +121,6 @@ public class AuthenticationController : ControllerBase
             {
                 Scheme = _redirectConfig.Scheme,
                 Host = _redirectConfig.Host,
-                Port = _redirectConfig.Port,
                 Path = _redirectConfig.Path,
                 Query = $"jwt={accessToken.Jwt}&refresh={accessToken.Refresh}"
             }.ToString();
