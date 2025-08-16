@@ -482,3 +482,10 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# HTTPS certificate
+*.pfx
+certs/
+
+
+prod.env
