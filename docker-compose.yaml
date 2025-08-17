@@ -42,7 +42,6 @@ services:
     depends_on:
       - postgres-identity
     networks:
-      - microservices-network
       - web
     restart: always
     labels:
@@ -51,6 +50,8 @@ services:
       - "traefik.http.routers.identity.entrypoints=websecure"
       - "traefik.http.routers.identity.tls.certresolver=myresolver"
       - "traefik.http.services.identity.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.identity-strip-prefix.stripprefix.prefixes=/api/identity"
+      - "traefik.http.routers.identity.middlewares=identity-strip-prefix"
 
   postgres-identity:
     image: postgres:latest
@@ -69,7 +70,5 @@ volumes:
   identity_db_volume:
 
 networks:
-  microservices-network:
-    external: true
   web:
     external: true
