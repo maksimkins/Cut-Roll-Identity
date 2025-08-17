@@ -138,7 +138,12 @@ public class AuthenticationController : ControllerBase
     public IActionResult ExternalLogin()
     {
         var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authentication");
-        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = redirectUrl,
+            Items = { ["scheme"] = "Google" } 
+        };
+
         return Challenge(properties, "Google");
     }
 
