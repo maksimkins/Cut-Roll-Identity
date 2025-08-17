@@ -16,14 +16,13 @@ public static class InitAuthMethod
         serviceCollection.Configure<JwtOptions>(jwtSection);
         serviceCollection.Configure<GoogleOAuthOptions>(googleOAuthSection);
 
-            serviceCollection.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
-                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-                options.DefaultChallengeScheme = "Google"; 
-            })
-            .AddCookie(IdentityConstants.ApplicationScheme)
-            .AddCookie(IdentityConstants.ExternalScheme)
+        serviceCollection.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+
+        })
             .AddJwtBearer(options =>
             {
                 var jwtOptions = jwtSection.Get<JwtOptions>() ?? throw new Exception("cannot find Jwt Section");
