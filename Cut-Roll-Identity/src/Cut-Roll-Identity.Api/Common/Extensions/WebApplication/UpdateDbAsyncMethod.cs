@@ -4,16 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Cut_Roll_Identity.Infrastructure.Common.Data;
 
-public static class UpdateDbMethod
+public static class UpdateDbAsyncMethod
 {
-    public static void UpdateDb(this WebApplication app)
+    public async static Task UpdateDbAsync(this WebApplication app)
     {
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             var dbContext = services.GetRequiredService<CutRollIdentityDbContext>();
         
-            dbContext.Database.Migrate();
+            await dbContext.Database.MigrateAsync();
         }
     }
 }

@@ -7,11 +7,11 @@ using Cut_Roll_Identity.Infrastructure.Identities.Dtos;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Cut_Roll_Identity.Api.Common.Configurations;
+using Microsoft.Extensions.Options;
 
 namespace Cut_Roll_Identity.Api.Authentication.Controllers;
 
@@ -26,10 +26,10 @@ public class AuthenticationController : ControllerBase
     public AuthenticationController(
         IIdentityAuthService identityAuthService,
         BaseBlobImageManager<string> userImageManager,
-        RedirectConfiguration redirectConfig
+        IOptionsSnapshot<RedirectConfiguration> redirectConfig
     )
     {
-        _redirectConfig = redirectConfig;
+        _redirectConfig = redirectConfig.Value;
         _identityAuthService = identityAuthService;
         _userImageManager = userImageManager;
     }

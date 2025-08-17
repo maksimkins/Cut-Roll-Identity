@@ -1,20 +1,27 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Cut_Roll_Identity.Core.Blob.BlobOptions;
 using Cut_Roll_Identity.Core.Blob.Managers;
+using Cut_Roll_Identity.Core.Common.Services;
 using Cut_Roll_Identity.Core.Users.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Cut_Roll_Identity.Infrastructure.Users.Managers;
 
 public class UserImageManager : BaseBlobImageManager<string>
 {
     private readonly IUserService _userService;
+    IMessageBrokerService _messageBrokerService;
     private readonly string _defaultAvatarUrl;
+    
 
-    public UserImageManager(IUserService userService, BlobServiceClient blobServiceClient) : base(blobServiceClient, "user-avatars")
+    public UserImageManager(IUserService userService, BlobServiceClient blobServiceClient, 
+        IMessageBrokerService messageBrokerService, IOptions<BlobOptions> blobOptions) 
+        : base(blobServiceClient, blobOptions.Value.ContainerName, blobOptions.Value.Directory)
     {
         _userService = userService;
-
+        _messageBrokerService = messageBrokerService;
         _defaultAvatarUrl = GetDefaultImageUrl();
 
     }
@@ -29,12 +36,18 @@ public class UserImageManager : BaseBlobImageManager<string>
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
             var blobUri = new Uri(user.AvatarPath).AbsolutePath.TrimStart('/');
             var blobName = Path.GetFileName(blobUri);
-            var blobClient = containerClient.GetBlobClient(blobName);
+            var blobClient = containerClient.GetBlobClient($"{_directory}/{blobName}");
 
             await blobClient.DeleteIfExistsAsync();
         }
 
         await _userService.PatchAvatarUrlPathAsync(id, _defaultAvatarUrl);
+
+        await _messageBrokerService.PushAsync("user_update_avatar_admin", new
+        {
+            Id = user.Id,
+            AvatarPath = _defaultAvatarUrl
+        });
 
         return user.AvatarPath!;
     }
@@ -53,7 +66,7 @@ public class UserImageManager : BaseBlobImageManager<string>
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
 
         var blobName = $"{user.Id}{Path.GetExtension(avatar.FileName)}";
-        var blobClient = containerClient.GetBlobClient(blobName);
+        var blobClient = containerClient.GetBlobClient($"{_directory}/{blobName}");
 
         using (var stream = avatar.OpenReadStream())
         {
@@ -62,6 +75,12 @@ public class UserImageManager : BaseBlobImageManager<string>
 
         var avatarUrl = blobClient.Uri.ToString();
         await _userService.PatchAvatarUrlPathAsync(id, avatarUrl);
+
+        await _messageBrokerService.PushAsync("user_update_avatar_admin", new
+        {
+            Id = user.Id,
+            AvatarPath = avatarUrl
+        });
 
         return avatarUrl;
     }

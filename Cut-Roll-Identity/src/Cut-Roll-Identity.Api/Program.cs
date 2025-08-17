@@ -11,15 +11,16 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 builder.SetupVariables();
-builder.InitMessageBroker();
+builder.ConfigureEmailSender();
+builder.ConfigureRedirectOption();
+builder.ConfigureMessageBroker();
 
 builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
 builder.Services.InitSwagger();
 builder.Services.InitCors();
-builder.Services.ConfigureServices(builder.Configuration);
 builder.Services.RegisterDependencyInjection();
-builder.Services.RegisterBlobStorage(builder.Configuration);
+builder.Services.RegisterConfigureBlobStorage(builder.Configuration);
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
@@ -28,9 +29,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UpdateDb();
-await app.SetupRoles();
-await app.SetupAdmin(builder.Configuration);
+await app.UpdateDbAsync();
+await app.SetupRolesAsync();
+await app.SetupAdminAsync(builder.Configuration);
 
 var forwardedHeaderOptions = new ForwardedHeadersOptions
 {

@@ -6,9 +6,9 @@ using Cut_Roll_Identity.Core.Users.Models;
 using Cut_Roll_Identity.Core.Users.Services;
 using Microsoft.AspNetCore.Builder;
 
-public static class SetupAdminMethod
+public static class SetupAdminAsyncMethod
 {
-    public async static Task SetupAdmin(this WebApplication app, IConfiguration configuration)
+    public async static Task SetupAdminAsync(this WebApplication app, IConfiguration configuration)
     {
         var adminUsername = configuration["DefaultAdmin:UserName"]!;
         var adminEmail = configuration["DefaultAdmin:Email"]!; 
