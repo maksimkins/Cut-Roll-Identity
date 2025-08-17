@@ -9,10 +9,8 @@ services:
     container_name: identity_container
     environment:
       ASPNETCORE_URLS: "http://+:80" 
-
       POSTGRES_CONNECTION_STRING: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Database=${POSTGRES_DB};Pooling=true;"
       BLOB_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=${AZURE_BLOB_DEFAULT_PROTOCOL};AccountName=${AZURE_BLOB_ACCOUNT_NAME};AccountKey=${AZURE_BLOB_ACCOUNT_KEY};EndpointSuffix=${AZURE_BLOB_ENDPOINT_SUFFIX}"
-
       JWT_KEY: "${JWT_KEY}"
       JWT_LIFE_TIME_IN_MINUTES: "15"
       JWT_ISSUER: "${JWT_ISSUER}"
@@ -39,18 +37,15 @@ services:
       ACME_EMAIL: "${ACME_EMAIL}"
       IDENTITY_HOST: "${IDENTITY_HOST}"
       ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT}"
-
     depends_on:
       - postgres-identity
     networks:
       - microservices-network
       - web
     restart: always
-    ports:
-      - "${LOCAL_IDENTITY_PORT}:80"  
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.identity.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/identity`)"
+      - "traefik.http.routers.identity.rule=Host(`cutnroll.it.com`) && PathPrefix(`/api/identity`)"
       - "traefik.http.routers.identity.entrypoints=websecure"
       - "traefik.http.routers.identity.tls.certresolver=myresolver"
       - "traefik.http.middlewares.identity-stripprefix.stripprefix.prefixes=/api/identity"
@@ -63,45 +58,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    expose:
-      - "${POSTGRES_PORT_EXT}:${POSTGRES_PORT}"
     networks:
       - microservices-network
     volumes:
       - identity_db_volume:/var/lib/postgresql/data
     restart: always
 
-  traefik-identity:
-    image: traefik:v3.0
-    container_name: identity_traefik_container
-    command:
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "${VM_IDENTITY_PORT_HTTP}:80"    
-      - "${VM_IDENTITY_PORT_HTTPS}:443"   
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "letsencrypt:/letsencrypt"
-    networks:
-      - web
-    restart: always
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager  
-
 volumes:
   identity_db_volume:
-  letsencrypt:
 
 networks:
   microservices-network:
     external: true
   web:
-    external: false
+    external: true
