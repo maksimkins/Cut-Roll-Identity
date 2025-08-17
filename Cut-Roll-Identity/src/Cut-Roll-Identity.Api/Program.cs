@@ -1,6 +1,7 @@
 using Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplicationBuilder;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,14 +32,24 @@ app.UpdateDb();
 await app.SetupRoles();
 await app.SetupAdmin(builder.Configuration);
 
-app.UseHttpsRedirection();
+var forwardedHeaderOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeaderOptions.KnownNetworks.Clear();
+forwardedHeaderOptions.KnownProxies.Clear();
 
-app.UseSwagger();           
+app.UseForwardedHeaders(forwardedHeaderOptions);
+
+app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapControllers();
+app.UseRouting();
 app.UseCors("AllowAllOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
+
 
 app.Run();

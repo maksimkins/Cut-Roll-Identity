@@ -37,7 +37,6 @@ public static class SetupVariablesMethod
 
         var redirect_scheme = Environment.GetEnvironmentVariable("REDIRECT_SCHEME") ?? throw new SystemException("there is no var REDIRECT_SCHEME");
         var redirect_host = Environment.GetEnvironmentVariable("REDIRECT_HOST") ?? throw new SystemException("there is no var REDIRECT_HOST");
-        var redirect_port = Environment.GetEnvironmentVariable("REDIRECT_PORT") ?? throw new SystemException("there is no var REDIRECT_PORT");
         var redirect_path = Environment.GetEnvironmentVariable("REDIRECT_PATH") ?? throw new SystemException("there is no var REDIRECT_PATH");
 
         builder.Configuration["Jwt:Key"] = jwt_key;
@@ -69,7 +68,6 @@ public static class SetupVariablesMethod
 
         builder.Configuration["Redirect:Scheme"] = redirect_scheme;
         builder.Configuration["Redirect:Host"] = redirect_host; 
-        builder.Configuration["Redirect:Port"] = redirect_port;
         builder.Configuration["Redirect:Path"] = redirect_path;
     }
 }
