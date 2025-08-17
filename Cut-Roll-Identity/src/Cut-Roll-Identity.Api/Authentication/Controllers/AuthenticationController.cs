@@ -17,7 +17,7 @@ namespace Cut_Roll_Identity.Api.Authentication.Controllers;
 
 
 [ApiController]
-[Route("/api/[controller]/[action]")]
+[Route("[controller]/[action]")]
 public class AuthenticationController : ControllerBase
 {
     private readonly IIdentityAuthService _identityAuthService;

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
-[Route("/api/[controller]/[action]")]
+[Route("[controller]/[action]")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
