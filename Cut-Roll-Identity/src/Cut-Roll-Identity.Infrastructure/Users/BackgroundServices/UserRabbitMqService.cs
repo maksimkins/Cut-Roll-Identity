@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace Cut_Roll_Identity.Infrastructure.Common.BackgroundServices;
+namespace Cut_Roll_Identity.Infrastructure.Users.BackgroundServices;
 
 public class UserRabbitMqService: BaseRabbitMqService, IHostedService
 {
