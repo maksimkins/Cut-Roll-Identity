@@ -49,10 +49,12 @@ services:
     ports:
       - "${LOCAL_IDENTITY_PORT}:80"  
     labels:
-      - "traefik.enable=${TRAEFIK_ENABLED}" 
+      - "traefik.enable=true"
       - "traefik.http.routers.identity.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/identity`)"
       - "traefik.http.routers.identity.entrypoints=websecure"
       - "traefik.http.routers.identity.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.identity-stripprefix.stripprefix.prefixes=/api/identity"
+      - "traefik.http.routers.identity.middlewares=identity-stripprefix"
 
   postgres-identity:
     image: postgres:latest
