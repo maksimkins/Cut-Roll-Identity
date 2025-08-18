@@ -17,6 +17,14 @@ builder.ConfigureMessageBroker();
 
 builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
+
+builder.Services.ConfigureExternalCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Path = "/api/identity"; 
+});
+
 builder.Services.InitSwagger();
 builder.Services.InitCors();
 builder.Services.RegisterDependencyInjection();
