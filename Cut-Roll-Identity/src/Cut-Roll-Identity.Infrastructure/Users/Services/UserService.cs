@@ -117,20 +117,27 @@ public class UserService : IUserService
 
         var result = await _userManager.UpdateAsync(userToChange);
 
-        if(result.Succeeded)
+        if (result.Succeeded)
         {
             var updatedUser = await _userManager.FindByIdAsync(userDto.Id) ?? throw new Exception("no such user");
 
-            await _messageBrokerService.PushAsync("user_update_admin", new {
+            await _messageBrokerService.PushAsync("user_update_admin", new
+            {
                 UserName = updatedUser.UserName,
                 Id = updatedUser.Id,
                 Email = updatedUser.Email,
             });
 
-            // await _messageBrokerService.PushAsync("user_update_userexperience", new {
-            //     Username = updatedUser.UserName,
-            //     Id = updatedUser.Id,
-            // });
+            await _messageBrokerService.PushAsync("user_update_news", new
+            {
+                Username = updatedUser.UserName,
+                Id = updatedUser.Id,
+            });
+            
+            await _messageBrokerService.PushAsync("user_update_users", new {
+                Username = updatedUser.UserName,
+                Id = updatedUser.Id,
+            });
         }
         return result;
     }

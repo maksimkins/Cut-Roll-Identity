@@ -92,6 +92,26 @@ public class IdentityAuthService : IIdentityAuthService
             IsMuted = false,
             AvatarPath = user.AvatarPath
         });
+
+        await _messageBrokerService.PushAsync("user_create_news", new
+        {
+            UserName = user.UserName,
+            Id = user.Id,
+            Email = user.Email,
+            IsBanned = false,
+            IsMuted = false,
+            AvatarPath = user.AvatarPath
+        });
+
+        await _messageBrokerService.PushAsync("user_create_users", new
+        {
+            UserName = user.UserName,
+            Id = user.Id,
+            Email = user.Email,
+            IsBanned = false,
+            IsMuted = false,
+            AvatarPath = user.AvatarPath
+        });
     }
 
     public async Task<string> GenerateEmailConfirmationTokenAsync(User? user)
@@ -118,6 +138,7 @@ public class IdentityAuthService : IIdentityAuthService
         if (user == null)
         {
             var newName = testUser?.UserName ?? await GenerateValidUniqueUsernameAsync(name);
+
             user = new User
             {
                 Email = email,

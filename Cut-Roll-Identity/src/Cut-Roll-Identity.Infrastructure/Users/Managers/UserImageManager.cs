@@ -49,6 +49,18 @@ public class UserImageManager : BaseBlobImageManager<string>
             AvatarPath = _defaultAvatarUrl
         });
 
+        await _messageBrokerService.PushAsync("user_update_avatar_news", new
+        {
+            Id = user.Id,
+            AvatarPath = _defaultAvatarUrl
+        });
+
+        await _messageBrokerService.PushAsync("user_update_avatar_users", new
+        {
+            Id = user.Id,
+            AvatarPath = _defaultAvatarUrl
+        });
+
         return user.AvatarPath!;
     }
 
@@ -77,6 +89,18 @@ public class UserImageManager : BaseBlobImageManager<string>
         await _userService.PatchAvatarUrlPathAsync(id, avatarUrl);
 
         await _messageBrokerService.PushAsync("user_update_avatar_admin", new
+        {
+            Id = user.Id,
+            AvatarPath = avatarUrl
+        });
+
+        await _messageBrokerService.PushAsync("user_update_avatar_news", new
+        {
+            Id = user.Id,
+            AvatarPath = avatarUrl
+        });
+
+        await _messageBrokerService.PushAsync("user_update_avatar_users", new
         {
             Id = user.Id,
             AvatarPath = avatarUrl
