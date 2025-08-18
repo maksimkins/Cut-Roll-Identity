@@ -132,7 +132,13 @@ public class AuthenticationController : ControllerBase
     [HttpGet]
     public IActionResult ExternalLogin()
     {
-        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authentication");
+        var redirectUrl = Url.Action(
+            nameof(ExternalLoginCallback),
+            "Authentication",
+            null,
+            Request.Scheme,
+            Request.Host.ToString()
+        );
         var properties = new AuthenticationProperties
         {
             RedirectUri = redirectUrl,
