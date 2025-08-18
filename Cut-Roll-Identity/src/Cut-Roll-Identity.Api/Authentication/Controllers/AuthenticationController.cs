@@ -114,8 +114,9 @@ public class AuthenticationController : ControllerBase
             var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             var name = result.Principal.FindFirstValue(ClaimTypes.Name);
             var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var pictureUrl = result.Principal.FindFirstValue("picture"); 
         
-            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId);
+            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, pictureUrl);
 
             var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
 

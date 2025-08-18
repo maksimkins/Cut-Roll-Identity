@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Authentication;
 using System.Security.Claims;
 using Cut_Roll_Identity.Core.Authentication.Services;
+using Cut_Roll_Identity.Core.Blob.Managers;
 using Cut_Roll_Identity.Core.Common.Options;
 using Cut_Roll_Identity.Core.Common.Services;
 using Cut_Roll_Identity.Core.Common.Tokens.AccessTokens.Entities;
@@ -30,6 +31,7 @@ public class IdentityAuthService : IIdentityAuthService
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IRoleService _roleService;
     private readonly IEmailSender _emailSender;
+    private readonly BaseBlobImageManager<string> _userImageManager;
 
     public IdentityAuthService(
         SignInManager<User> signInManager,
@@ -38,7 +40,8 @@ public class IdentityAuthService : IIdentityAuthService
         IRefreshTokenService refreshTokenService,
         IMessageBrokerService messageBrokerService,
         IRoleService roleService,
-        IEmailSender emailSender
+        IEmailSender emailSender,
+        BaseBlobImageManager<string> userImageManager
         )
     {
         _refreshTokenService = refreshTokenService;
@@ -48,6 +51,7 @@ public class IdentityAuthService : IIdentityAuthService
         _messageBrokerService = messageBrokerService;
         _roleService = roleService;
         _emailSender = emailSender;
+        _userImageManager = userImageManager;
     }
 
     public async Task RegisterAsync(User user, string? password)
@@ -86,6 +90,7 @@ public class IdentityAuthService : IIdentityAuthService
             Email = user.Email,
             IsBanned = false,
             IsMuted = false,
+            AvatarPath = user.AvatarPath
         });
     }
 
@@ -100,7 +105,7 @@ public class IdentityAuthService : IIdentityAuthService
         return token;
     }
 
-    public async Task<AccessToken> SignInWithExternalProviderAsync(string? email, string? name, string? externalId)
+    public async Task<AccessToken> SignInWithExternalProviderAsync(string? email, string? name, string? externalId, string? pictureUrl)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(externalId))
         {
@@ -119,6 +124,7 @@ public class IdentityAuthService : IIdentityAuthService
                 UserName = newName,
                 Id = externalId,
                 EmailConfirmed = true,
+                AvatarPath = pictureUrl ?? _userImageManager.GetDefaultImageUrl()
             };
 
             await this.RegisterAsync(user, null);

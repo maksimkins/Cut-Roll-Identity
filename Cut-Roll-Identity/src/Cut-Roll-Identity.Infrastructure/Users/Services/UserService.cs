@@ -127,10 +127,10 @@ public class UserService : IUserService
                 Email = updatedUser.Email,
             });
 
-            await _messageBrokerService.PushAsync("user_update_userexperience", new {
-                Username = updatedUser.UserName,
-                Id = updatedUser.Id,
-            });
+            // await _messageBrokerService.PushAsync("user_update_userexperience", new {
+            //     Username = updatedUser.UserName,
+            //     Id = updatedUser.Id,
+            // });
         }
         return result;
     }
