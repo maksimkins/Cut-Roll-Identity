@@ -18,11 +18,18 @@ builder.ConfigureMessageBroker();
 builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
 
-builder.Services.ConfigureExternalCookie(options =>
+builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.Cookie.Path = "/api/identity";
     options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.Path = "/api/identity"; 
+});
+
+builder.Services.ConfigureExternalCookie(options =>
+{
+    options.Cookie.Path = "/api/identity";
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 builder.Services.InitSwagger();
