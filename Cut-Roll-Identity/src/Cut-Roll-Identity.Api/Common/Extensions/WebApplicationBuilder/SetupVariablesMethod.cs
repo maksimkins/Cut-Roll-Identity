@@ -39,6 +39,9 @@ public static class SetupVariablesMethod
         var redirect_host = Environment.GetEnvironmentVariable("REDIRECT_HOST") ?? throw new SystemException("there is no var REDIRECT_HOST");
         var redirect_path = Environment.GetEnvironmentVariable("REDIRECT_PATH") ?? throw new SystemException("there is no var REDIRECT_PATH");
 
+        var blob_container_name = Environment.GetEnvironmentVariable("BLOB_STORAGE_CONTAINER_NAME") ?? throw new SystemException("there is no var BLOB_STORAGE_CONTAINER_NAME");
+        var blob_directory = Environment.GetEnvironmentVariable("BLOB_STORAGE_DIRECTORY") ?? throw new SystemException("there is no var BLOB_STORAGE_DIRECTORY");
+
         builder.Configuration["Jwt:Key"] = jwt_key;
         builder.Configuration["Jwt:LifeTimeInMinutes"] = jwt_life_time;
         builder.Configuration["Jwt:Issuer"] = jwt_issuer;
@@ -67,7 +70,11 @@ public static class SetupVariablesMethod
         builder.Configuration["OAuth:GoogleOAuth:CallbackPath"] = google_oauth_callback_path;
 
         builder.Configuration["Redirect:Scheme"] = redirect_scheme;
-        builder.Configuration["Redirect:Host"] = redirect_host; 
+        builder.Configuration["Redirect:Host"] = redirect_host;
         builder.Configuration["Redirect:Path"] = redirect_path;
+
+        builder.Configuration["BlobStorage:ContainerName"] = blob_container_name;
+        builder.Configuration["BlobStorage:Directory"] = blob_directory;
+
     }
 }
