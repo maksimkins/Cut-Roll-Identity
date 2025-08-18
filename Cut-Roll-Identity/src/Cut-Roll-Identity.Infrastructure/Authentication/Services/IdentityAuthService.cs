@@ -34,7 +34,7 @@ public class IdentityAuthService : IIdentityAuthService
     public IdentityAuthService(
         SignInManager<User> signInManager,
         IUserService userService,
-        IOptionsSnapshot<JwtOptions> jwtOptionsSnapshot,
+        IOptions<JwtOptions> jwtOptionsSnapshot,
         IRefreshTokenService refreshTokenService,
         IMessageBrokerService messageBrokerService,
         IRoleService roleService,

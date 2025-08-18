@@ -10,7 +10,7 @@ public class RefreshTokenService : IRefreshTokenService
 {
     private readonly IRefreshTokenRepository _repository;
     private readonly RefreshTokenOptions _refreshTokenOptions;
-    public RefreshTokenService(IRefreshTokenRepository repository, IOptionsSnapshot<RefreshTokenOptions> refreshTokenOptionsSnapshot)
+    public RefreshTokenService(IRefreshTokenRepository repository, IOptions<RefreshTokenOptions> refreshTokenOptionsSnapshot)
     {
         _repository = repository;
         _refreshTokenOptions = refreshTokenOptionsSnapshot.Value;

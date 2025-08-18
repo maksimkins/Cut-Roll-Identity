@@ -26,7 +26,7 @@ public class AuthenticationController : ControllerBase
     public AuthenticationController(
         IIdentityAuthService identityAuthService,
         BaseBlobImageManager<string> userImageManager,
-        IOptionsSnapshot<RedirectConfiguration> redirectConfig
+        IOptions<RedirectConfiguration> redirectConfig
     )
     {
         _redirectConfig = redirectConfig.Value;

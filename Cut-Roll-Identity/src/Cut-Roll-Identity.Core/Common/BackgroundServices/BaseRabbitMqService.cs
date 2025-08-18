@@ -15,7 +15,7 @@ public abstract class BaseRabbitMqService
 
     private static readonly List<(IConnection connection, IModel model)> connections = new();
 
-    public BaseRabbitMqService(IOptionsSnapshot<RabbitMqOptions> optionsSnapshot, IServiceScopeFactory serviceScopeFactory)
+    public BaseRabbitMqService(IOptions<RabbitMqOptions> optionsSnapshot, IServiceScopeFactory serviceScopeFactory)
     {
         this.rabbitMqConnectionFactory = new ConnectionFactory()
         {

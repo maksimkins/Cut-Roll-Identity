@@ -12,7 +12,7 @@ public class RabbitMqService : IMessageBrokerService
 {
     private readonly ConnectionFactory rabbitMqConnectionFactory;
 
-    public RabbitMqService(IOptionsSnapshot<RabbitMqOptions> optionsSnapshot)
+    public RabbitMqService(IOptions<RabbitMqOptions> optionsSnapshot)
     {
         this.rabbitMqConnectionFactory = new ConnectionFactory() {
             HostName = optionsSnapshot.Value.HostName,
