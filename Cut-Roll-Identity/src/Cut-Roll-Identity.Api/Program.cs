@@ -45,6 +45,8 @@ app.UseForwardedHeaders(forwardedHeaderOptions);
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UsePathBase("/api/identity");
+
 app.UseRouting();
 app.UseCors("AllowAllOrigins");
 app.UseAuthentication();

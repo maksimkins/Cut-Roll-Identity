@@ -117,13 +117,7 @@ public class AuthenticationController : ControllerBase
         
             var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId);
 
-            var frontendUrl = new UriBuilder
-            {
-                Scheme = _redirectConfig.Scheme,
-                Host = _redirectConfig.Host,
-                Path = _redirectConfig.Path,
-                Query = $"jwt={accessToken.Jwt}&refresh={accessToken.Refresh}"
-            }.ToString();
+            var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
 
             return Redirect(frontendUrl);
         }
