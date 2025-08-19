@@ -13,8 +13,7 @@ public static class InitCorsMethod
                 builder
                     .AllowAnyOrigin()
                     .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials(); 
+                    .AllowAnyMethod();
             });
         });
     }
