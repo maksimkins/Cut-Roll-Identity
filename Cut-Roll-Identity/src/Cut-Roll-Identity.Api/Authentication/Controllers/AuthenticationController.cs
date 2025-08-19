@@ -101,30 +101,54 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> ExternalLoginCallback()
+    // [HttpGet]
+    // public async Task<IActionResult> ExternalLoginCallback()
+    // {
+    //     try
+    //     {
+    //         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+
+    //          if (!result.Succeeded || result?.Principal == null)
+    //             return Unauthorized($"Google authentication failed {result} {result?.Succeeded} {result?.Principal}");
+
+    //         var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+    //         var name = result.Principal.FindFirstValue(ClaimTypes.Name);
+    //         var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+    //         //var pictureUrl = result.Principal.FindFirstValue("picture"); 
+        
+    //         var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
+
+    //         var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
+
+    //         return Redirect(frontendUrl);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //        return this.InternalServerError(ex.Message);
+    //     }
+    // }
+
+    [HttpGet("/api/identity/signin-google")]
+    public async Task<IActionResult> GoogleLoginCallback()
     {
         try
         {
             var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-
-             if (!result.Succeeded || result?.Principal == null)
-                return Unauthorized($"Google authentication failed {result} {result?.Succeeded} {result?.Principal}");
+            if (!result.Succeeded || result?.Principal == null)
+                return Unauthorized("Google authentication failed");
 
             var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             var name = result.Principal.FindFirstValue(ClaimTypes.Name);
             var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            //var pictureUrl = result.Principal.FindFirstValue("picture"); 
-        
-            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
 
+            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
             var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
 
             return Redirect(frontendUrl);
         }
         catch (Exception ex)
         {
-           return this.InternalServerError(ex.Message);
+            return this.InternalServerError(ex.Message);
         }
     }
 
@@ -134,7 +158,7 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
-            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authentication");
+            var redirectUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication");
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
             return Challenge(properties, "Google");
         }
