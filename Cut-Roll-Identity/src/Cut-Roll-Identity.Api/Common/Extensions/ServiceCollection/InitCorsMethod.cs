@@ -10,7 +10,23 @@ public static class InitCorsMethod
         {
             options.AddPolicy("AllowAllOrigins", delegate (CorsPolicyBuilder builder)
             {
-                builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                builder
+                    .AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials(); 
+            });
+        });
+        
+        serviceCollection.AddCors(delegate (CorsOptions options)
+        {
+            options.AddPolicy("AllowLocalhost", policy =>
+            {
+                policy
+                    .WithOrigins("http://localhost:5173")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
         });
     }
