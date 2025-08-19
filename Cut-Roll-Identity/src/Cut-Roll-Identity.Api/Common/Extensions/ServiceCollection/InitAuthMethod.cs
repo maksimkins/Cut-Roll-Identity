@@ -41,6 +41,7 @@ public static class InitAuthMethod
                     IssuerSigningKey = new SymmetricSecurityKey(jwtOptions!.KeyInBytes)
                 };
             })
+            .AddCookie(IdentityConstants.ExternalScheme)
             .AddGoogle("Google", options =>
             {
                 var googleOAuthOptions = googleOAuthSection.Get<GoogleOAuthOptions>() ?? throw new Exception("cannot find GoogleOAuth Section");
