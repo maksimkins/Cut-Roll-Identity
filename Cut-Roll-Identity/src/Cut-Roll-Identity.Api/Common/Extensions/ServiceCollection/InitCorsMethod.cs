@@ -17,17 +17,5 @@ public static class InitCorsMethod
                     .AllowCredentials(); 
             });
         });
-        
-        serviceCollection.AddCors(delegate (CorsOptions options)
-        {
-            options.AddPolicy("AllowLocalhost", policy =>
-            {
-                policy
-                    .WithOrigins("http://localhost:5173")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
-            });
-        });
     }
 }
