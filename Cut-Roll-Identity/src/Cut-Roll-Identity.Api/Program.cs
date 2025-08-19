@@ -1,6 +1,7 @@
 using Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplicationBuilder;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,18 @@ builder.ConfigureMessageBroker();
 
 builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
+
+builder.Services.PostConfigure<GoogleOptions>(options =>
+{
+    options.CorrelationCookie.Path = "/api/identity"; 
+});
+
+builder.Services.ConfigureExternalCookie(options =>
+{
+    options.Cookie.Path = "/api/identity"; 
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 builder.Services.InitSwagger();
 builder.Services.InitCors();
