@@ -19,18 +19,6 @@ builder.ConfigureMessageBroker();
 builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
 
-builder.Services.PostConfigure<GoogleOptions>(options =>
-{
-    options.CorrelationCookie.Path = "/api/identity"; 
-});
-
-builder.Services.ConfigureExternalCookie(options =>
-{
-    options.Cookie.Path = "/api/identity"; 
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-});
-
 builder.Services.InitSwagger();
 builder.Services.InitCors();
 builder.Services.RegisterDependencyInjection();
@@ -60,8 +48,6 @@ forwardedHeaderOptions.KnownProxies.Clear();
 
 app.UseForwardedHeaders(forwardedHeaderOptions);
 
-
-app.UsePathBase("/api/identity");
 
 app.UseSwagger();
 app.UseSwaggerUI();
