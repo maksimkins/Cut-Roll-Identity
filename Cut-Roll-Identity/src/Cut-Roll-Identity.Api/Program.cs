@@ -20,14 +20,12 @@ builder.Services.InitAuth(builder.Configuration);
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.Path = "/api/identity";
     options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 builder.Services.ConfigureExternalCookie(options =>
 {
-    options.Cookie.Path = "/api/identity";
     options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
