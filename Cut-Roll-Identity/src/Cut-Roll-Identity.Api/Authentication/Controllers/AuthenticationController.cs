@@ -128,7 +128,7 @@ public class AuthenticationController : ControllerBase
     //     }
     // }
 
-    [HttpGet("/api/identity/signin-google")]
+    [HttpGet("/signin-google")]
     public async Task<IActionResult> GoogleLoginCallback()
     {
         try
