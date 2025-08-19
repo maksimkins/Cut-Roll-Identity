@@ -47,7 +47,7 @@ public static class InitAuthMethod
 
                 options.ClientId = googleOAuthOptions.ClientId;
                 options.ClientSecret = googleOAuthOptions.ClientSecret;
-                options.CallbackPath = new PathString(googleOAuthOptions.CallbackPath);
+                options.CallbackPath = googleOAuthOptions.CallbackPath;
 
                 options.Scope.Add("profile");
                 options.Scope.Add("email");
