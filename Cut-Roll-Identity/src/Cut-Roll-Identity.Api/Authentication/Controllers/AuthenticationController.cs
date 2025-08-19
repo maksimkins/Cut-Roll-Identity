@@ -109,7 +109,7 @@ public class AuthenticationController : ControllerBase
             var result = await HttpContext.AuthenticateAsync("Google");
 
              if (!result.Succeeded || result?.Principal == null)
-                return Unauthorized("Google authentication failed");
+                return Unauthorized(IdentityConstants.ExternalScheme);
 
             var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             var name = result.Principal.FindFirstValue(ClaimTypes.Name);
