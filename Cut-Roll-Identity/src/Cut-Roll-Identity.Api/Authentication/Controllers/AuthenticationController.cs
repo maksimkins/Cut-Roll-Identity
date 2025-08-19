@@ -106,7 +106,7 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
-            var result = await HttpContext.AuthenticateAsync("Google");
+            var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
 
              if (!result.Succeeded || result?.Principal == null)
                 return Unauthorized("Google authentication failed");
@@ -114,9 +114,9 @@ public class AuthenticationController : ControllerBase
             var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             var name = result.Principal.FindFirstValue(ClaimTypes.Name);
             var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            var pictureUrl = result.Principal.FindFirstValue("picture"); 
+            //var pictureUrl = result.Principal.FindFirstValue("picture"); 
         
-            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, pictureUrl);
+            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
 
             var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
 
@@ -132,20 +132,16 @@ public class AuthenticationController : ControllerBase
     [HttpGet]
     public IActionResult ExternalLogin()
     {
-        var redirectUrl = Url.Action(
-            nameof(ExternalLoginCallback),
-            "Authentication",
-            null,
-            Request.Scheme,
-            Request.Host.ToString()
-        );
-        var properties = new AuthenticationProperties
+        try
         {
-            RedirectUri = redirectUrl,
-            Items = { ["scheme"] = "Google" } 
-        };
-
-        return Challenge(properties, "Google");
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Authentication");
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, "Google");
+        }
+        catch (Exception ex)
+        {
+           return this.InternalServerError(ex.Message);
+        }
     }
 
 
