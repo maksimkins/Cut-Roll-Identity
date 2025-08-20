@@ -12,9 +12,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Cut_Roll_Identity.Api.Common.Configurations;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
 
 namespace Cut_Roll_Identity.Api.Authentication.Controllers;
+
 
 [ApiController]
 [Route("[controller]/[action]")]
@@ -23,7 +23,6 @@ public class AuthenticationController : ControllerBase
     private readonly IIdentityAuthService _identityAuthService;
     private readonly BaseBlobImageManager<string> _userImageManager;
     private readonly RedirectConfiguration _redirectConfig;
-
     public AuthenticationController(
         IIdentityAuthService identityAuthService,
         BaseBlobImageManager<string> userImageManager,
@@ -60,6 +59,7 @@ public class AuthenticationController : ControllerBase
             return this.InternalServerError(exception.Message);
         }
     }
+
 
     [HttpPost]
     public async Task<IActionResult> RegistrationAsync([Required, FromBody] RegistrationDto registrationDto)
@@ -102,105 +102,89 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult ExternalLogin()
+    public async Task<IActionResult> GoogleLoginCallback()
     {
         try
         {
-            // Get the configured callback path
-            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
-            var callbackPath = configuration["OAuth:GoogleOAuth:CallbackPath"];
+            // Log the request for debugging
+            var queryString = HttpContext.Request.QueryString.ToString();
+            var headers = string.Join(", ", HttpContext.Request.Headers.Select(h => $"{h.Key}={h.Value}"));
             
-            if (string.IsNullOrEmpty(callbackPath))
+            // Check if we have the authentication result
+            Console.WriteLine("=== Google OAuth Callback Started ===");
+            Console.WriteLine($"Query string: {queryString}");
+            Console.WriteLine($"Headers: {headers}");
+            Console.WriteLine($"Request Path: {HttpContext.Request.Path}");
+            Console.WriteLine($"Request Scheme: {HttpContext.Request.Scheme}");
+            Console.WriteLine($"Request Host: {HttpContext.Request.Host}");
+            
+            // Check if we have the authentication result
+            Console.WriteLine("Attempting to authenticate with IdentityConstants.ExternalScheme...");
+            var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+            
+            Console.WriteLine($"Authentication result - Succeeded: {result?.Succeeded}");
+            Console.WriteLine($"Authentication result - Principal: {(result?.Principal != null ? "Present" : "Null")}");
+            
+            if (result != null && !result.Succeeded)
             {
-                return BadRequest("OAuth callback path not configured");
+                var failure = result?.Failure?.Message ?? "Unknown error";
+                var failureType = result?.Failure?.GetType().Name ?? "Unknown";
+                var failureStackTrace = result?.Failure?.StackTrace ?? "No stack trace";
+                
+                // Log the failure details
+                Console.WriteLine($"Google OAuth failed: {failureType} - {failure}");
+                Console.WriteLine($"Failure stack trace: {failureStackTrace}");
+                Console.WriteLine($"Query string: {queryString}");
+                Console.WriteLine($"Headers: {headers}");
+                
+                return Unauthorized($"Google auth failed: {failureType} - {failure}");
+            }
+            
+            if (result?.Principal == null)
+            {
+                Console.WriteLine("Google OAuth succeeded but Principal is null");
+                return Unauthorized("Google auth failed: Principal is null");
             }
 
-            // Build the full callback URL
-            var fullCallbackUrl = $"https://cutnroll.it.com{callbackPath}";
-            var properties = new AuthenticationProperties { RedirectUri = fullCallbackUrl };
-            
-            Console.WriteLine($"ExternalLogin - Redirecting to Google with callback: {fullCallbackUrl}");
-            
-            return Challenge(properties, "Google");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"ExternalLogin Error: {ex.Message}");
-            return this.InternalServerError(ex.Message);
-        }
-    }
+            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+            var name = result.Principal.FindFirstValue(ClaimTypes.Name);
+            var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
-    [HttpGet]
-    public async Task<IActionResult> GoogleLoginCallback(string code, string state)
-    {
-        try
-        {
-            var googleOAuthSection = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetSection("OAuth:GoogleOAuth");
-            var clientId = googleOAuthSection["ClientId"];
-            var clientSecret = googleOAuthSection["ClientSecret"];
-            var redirectUri = $"https://cutnroll.it.com{googleOAuthSection["CallbackPath"]}";
-    
-            // 1️⃣ Exchange code for tokens
-            using var httpClient = new HttpClient();
-            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token")
-            {
-                Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    { "code", code },
-                    { "client_id", clientId ?? throw new ArgumentNullException("ClientId is not configured") },
-                    { "client_secret", clientSecret  ?? throw new ArgumentNullException("ClientSecret is not configured") },
-                    { "redirect_uri", redirectUri ?? throw new ArgumentNullException("RedirectUri is not configured") },
-                    { "grant_type", "authorization_code" }
-                })
-            };
-    
-            var tokenResponse = await httpClient.SendAsync(tokenRequest);
-            tokenResponse.EnsureSuccessStatusCode();
-            var tokenJson = await tokenResponse.Content.ReadAsStringAsync();
-            var tokenData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(tokenJson)!;
-    
-            var accessToken = tokenData["access_token"].GetString();
-            if (string.IsNullOrEmpty(accessToken))
-                return Unauthorized("Failed to obtain Google access token");
-    
-            // 2️⃣ Get user info from Google
-            var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
-            userInfoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-    
-            var userInfoResponse = await httpClient.SendAsync(userInfoRequest);
-            userInfoResponse.EnsureSuccessStatusCode();
-            var userInfoJson = await userInfoResponse.Content.ReadAsStringAsync();
-            var userInfo = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfoJson)!;
-    
-            var email = userInfo.GetValueOrDefault("email");
-            var name = userInfo.GetValueOrDefault("name");
-            var externalId = userInfo.GetValueOrDefault("id");
-    
             if (string.IsNullOrEmpty(email))
-                return Unauthorized("Google did not return an email");
-    
-    
-        
-    
-            // Sign in the user
-            var accessTokenMy = await _identityAuthService.SignInWithExternalProviderAsync(
-                email, name, externalId, null
-            );
-            
-            // Build redirect URL
-            var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessTokenMy.Jwt}&refresh={accessTokenMy.Refresh}";
-            
-            Console.WriteLine($"Redirecting to frontend: {frontendUrl}");
+            {
+                Console.WriteLine("Google OAuth succeeded but email is null");
+                return Unauthorized("Google auth failed: Email not provided");
+            }
+
+            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
+            var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
 
             return Redirect(frontendUrl);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"GoogleLoginCallback Exception: {ex.Message}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine($"Exception in GoogleLoginCallback: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
             return this.InternalServerError(ex.Message);
         }
     }
+
+
+    [HttpGet]
+    public IActionResult ExternalLogin()
+    {
+        try
+        {
+            var redirectUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication");
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, "Google");
+        }
+        catch (Exception ex)
+        {
+           return this.InternalServerError(ex.Message);
+        }
+    }
+
 
     [HttpGet]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
@@ -208,6 +192,7 @@ public class AuthenticationController : ControllerBase
         try
         {
             var result = await _identityAuthService.ConfirmEmail(userId, token);
+
             return result.Succeeded ? Ok() : BadRequest(error: result.Errors);
         }
         catch(ArgumentException exception)
@@ -250,6 +235,67 @@ public class AuthenticationController : ControllerBase
             return this.InternalServerError(exception.Message);
         }
     }
+    
+    [HttpGet]
+    public IActionResult Error(string message)
+    {
+        return BadRequest(new { error = message ?? "Unknown OAuth error" });
+    }
+
+    [HttpGet]
+    public IActionResult OAuthConfig()
+    {
+        try
+        {
+            var config = new
+            {
+                CallbackUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication"),
+                ExternalLoginUrl = Url.Action(nameof(ExternalLogin), "Authentication"),
+                RequestScheme = HttpContext.Request.Scheme,
+                RequestHost = HttpContext.Request.Host.ToString(),
+                RequestPath = HttpContext.Request.Path.ToString(),
+                FullCallbackUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(GoogleLoginCallback), "Authentication")}",
+                FullExternalLoginUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(ExternalLogin), "Authentication")}"
+            };
+            
+            return Ok(config);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult TestOAuthConfig()
+    {
+        try
+        {
+            // Get the configuration from the service
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var googleOAuthSection = configuration.GetSection("OAuth:GoogleOAuth");
+            
+            var config = new
+            {
+                HasOAuthSection = googleOAuthSection.Exists(),
+                ClientId = googleOAuthSection["ClientId"],
+                HasClientSecret = !string.IsNullOrEmpty(googleOAuthSection["ClientSecret"]),
+                CallbackPath = googleOAuthSection["CallbackPath"],
+                EnvironmentVariables = new
+                {
+                    HasClientId = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_ID")),
+                    HasClientSecret = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_SECRET")),
+                    CallbackPath = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CALLBACK_PATH")
+                }
+            };
+            
+            return Ok(config);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 
     [HttpPut]
     public async Task<IActionResult> UpdateTokenAsync([Required, FromBody]Guid refresh)
@@ -272,46 +318,6 @@ public class AuthenticationController : ControllerBase
         catch(Exception exception)
         {
             return this.InternalServerError(exception.Message);
-        }
-    }
-
-    [HttpGet]
-    public IActionResult Error(string message)
-    {
-        Console.WriteLine($"OAuth Error: {message}");
-        return BadRequest(new { error = message ?? "Unknown OAuth error" });
-    }
-
-    [HttpGet]
-    public IActionResult OAuthStatus()
-    {
-        try
-        {
-            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
-            var callbackPath = configuration["OAuth:GoogleOAuth:CallbackPath"];
-            var clientId = configuration["OAuth:GoogleOAuth:ClientId"];
-            var hasClientSecret = !string.IsNullOrEmpty(configuration["OAuth:GoogleOAuth:ClientSecret"]);
-
-            var status = new
-            {
-                OAuthConfigured = !string.IsNullOrEmpty(clientId) && hasClientSecret && !string.IsNullOrEmpty(callbackPath),
-                ClientId = clientId,
-                HasClientSecret = hasClientSecret,
-                CallbackPath = callbackPath,
-                FullCallbackUrl = !string.IsNullOrEmpty(callbackPath) ? $"https://cutnroll.it.com{callbackPath}" : null,
-                RequestInfo = new
-                {
-                    Scheme = HttpContext.Request.Scheme,
-                    Host = HttpContext.Request.Host.ToString(),
-                    Path = HttpContext.Request.Path.ToString()
-                }
-            };
-
-            return Ok(status);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
         }
     }
 }
