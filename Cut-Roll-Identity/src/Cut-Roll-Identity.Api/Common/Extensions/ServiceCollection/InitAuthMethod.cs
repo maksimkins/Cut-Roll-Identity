@@ -54,6 +54,15 @@ public static class InitAuthMethod
 
                 options.SaveTokens = true;
                 
+                // Force HTTPS for all OAuth operations
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.CorrelationCookie.SameSite = SameSiteMode.None;
+                options.CorrelationCookie.HttpOnly = true;
+                
+                // Set explicit redirect URI to force HTTPS
+                var redirectUri = $"https://cutnroll.it.com{googleOAuthOptions.CallbackPath}";
+                Console.WriteLine($"OAuth Configuration - Redirect URI: {redirectUri}");
+                
                 // Force HTTPS for OAuth
                 options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.CorrelationCookie.SameSite = SameSiteMode.None;
@@ -65,7 +74,10 @@ public static class InitAuthMethod
                     {
                         context.HandleResponse();
                         var errorMessage = context?.Failure?.Message ?? "Unknown OAuth error";
+                        var innerException = context?.Failure?.InnerException?.Message ?? "No inner exception";
                         Console.WriteLine($"OAuth Remote Failure: {errorMessage}");
+                        Console.WriteLine($"OAuth Remote Failure Inner: {innerException}");
+                        Console.WriteLine($"OAuth Remote Failure Type: {context?.Failure?.GetType().Name}");
                         context?.Response.Redirect($"/Authentication/Error?message={Uri.EscapeDataString(errorMessage)}");
                         return Task.CompletedTask;
                     },
@@ -83,6 +95,11 @@ public static class InitAuthMethod
                     {
                         Console.WriteLine($"OAuth Redirect to: {context.RedirectUri}");
                         context.Response.Redirect(context.RedirectUri);
+                        return Task.CompletedTask;
+                    },
+                    OnAccessDenied = context =>
+                    {
+                        Console.WriteLine($"OAuth Access Denied: {context.AccessDeniedPath}");
                         return Task.CompletedTask;
                     }
                 };

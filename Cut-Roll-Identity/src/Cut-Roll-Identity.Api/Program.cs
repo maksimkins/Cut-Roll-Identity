@@ -80,12 +80,18 @@ app.UseForwardedHeaders(forwardedHeaderOptions);
                         ctx.Request.Headers["X-Forwarded-Proto"] = "https";
                     }
                     
+                    // Force all forwarded headers for OAuth
+                    ctx.Request.Headers["X-Forwarded-Host"] = ctx.Request.Host.ToString();
+                    ctx.Request.Headers["X-Forwarded-Port"] = "443";
+                    
                     Console.WriteLine($"OAuth Request (Forced HTTPS):");
                     Console.WriteLine($"  Path: {ctx.Request.Path}");
                     Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
                     Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
                     Console.WriteLine($"  Host: {ctx.Request.Host}");
                     Console.WriteLine($"  X-Forwarded-Proto: {ctx.Request.Headers["X-Forwarded-Proto"]}");
+                    Console.WriteLine($"  X-Forwarded-Host: {ctx.Request.Headers["X-Forwarded-Host"]}");
+                    Console.WriteLine($"  X-Forwarded-Port: {ctx.Request.Headers["X-Forwarded-Port"]}");
                     Console.WriteLine($"  X-Original-Proto: {ctx.Request.Headers["X-Original-Proto"]}");
                 }
                 
