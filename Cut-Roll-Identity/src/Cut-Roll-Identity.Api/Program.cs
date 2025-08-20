@@ -66,24 +66,31 @@ forwardedHeaderOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeaderOptions);
 
 // Debug middleware to log request details
-app.Use(async (ctx, next) => 
-{ 
-    // Force HTTPS for OAuth callbacks to fix protocol mismatch
-    if (ctx.Request.Path.StartsWithSegments("/Authentication/GoogleLoginCallback"))
-    {
-        ctx.Request.Scheme = "https";
-        Console.WriteLine($"OAuth Callback Request:");
-        Console.WriteLine($"  Path: {ctx.Request.Path}");
-        Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
-        Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
-        Console.WriteLine($"  Host: {ctx.Request.Host}");
-        Console.WriteLine($"  X-Forwarded-Proto: {ctx.Request.Headers["X-Forwarded-Proto"]}");
-        Console.WriteLine($"  X-Original-Proto: {ctx.Request.Headers["X-Original-Proto"]}");
-        Console.WriteLine($"  Headers: {string.Join(", ", ctx.Request.Headers.Select(h => $"{h.Key}={h.Value}"))}");
-    }
-    
-    await next(); 
-});
+            app.Use(async (ctx, next) => 
+            { 
+                // Force HTTPS for OAuth-related requests to fix protocol mismatch
+                if (ctx.Request.Path.StartsWithSegments("/Authentication/") || 
+                    ctx.Request.Path.StartsWithSegments("/signin-google"))
+                {
+                    ctx.Request.Scheme = "https";
+                    
+                    // Also set the X-Forwarded-Proto header if it's missing
+                    if (string.IsNullOrEmpty(ctx.Request.Headers["X-Forwarded-Proto"]))
+                    {
+                        ctx.Request.Headers["X-Forwarded-Proto"] = "https";
+                    }
+                    
+                    Console.WriteLine($"OAuth Request (Forced HTTPS):");
+                    Console.WriteLine($"  Path: {ctx.Request.Path}");
+                    Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
+                    Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
+                    Console.WriteLine($"  Host: {ctx.Request.Host}");
+                    Console.WriteLine($"  X-Forwarded-Proto: {ctx.Request.Headers["X-Forwarded-Proto"]}");
+                    Console.WriteLine($"  X-Original-Proto: {ctx.Request.Headers["X-Original-Proto"]}");
+                }
+                
+                await next(); 
+            });
 
 
 app.UseSwagger();
