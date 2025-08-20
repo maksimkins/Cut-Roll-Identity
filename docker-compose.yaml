@@ -54,6 +54,7 @@ services:
       - "traefik.http.services.identity.loadbalancer.server.port=80"
       - "traefik.http.middlewares.identity-strip-prefix.stripprefix.prefixes=/api/identity"
       - "traefik.http.routers.identity.middlewares=identity-strip-prefix"
+      - "traefik.http.middlewares.identity-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
 
   postgres-identity:
     image: postgres:latest

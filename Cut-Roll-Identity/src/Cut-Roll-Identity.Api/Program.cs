@@ -58,7 +58,7 @@ await app.SetupAdminAsync(builder.Configuration);
 
 var forwardedHeaderOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
 };
 forwardedHeaderOptions.KnownNetworks.Clear();
 forwardedHeaderOptions.KnownProxies.Clear();
@@ -68,7 +68,8 @@ app.UseForwardedHeaders(forwardedHeaderOptions);
 // Debug middleware to log request details
 app.Use(async (ctx, next) => 
 { 
-    ctx.Request.Scheme = "https"; 
+    // Don't force HTTPS here, let the forwarded headers handle it
+    // ctx.Request.Scheme = "https"; 
     
     // Log request details for debugging
     if (ctx.Request.Path.StartsWithSegments("/Authentication/GoogleLoginCallback"))
@@ -78,6 +79,8 @@ app.Use(async (ctx, next) =>
         Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
         Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
         Console.WriteLine($"  Host: {ctx.Request.Host}");
+        Console.WriteLine($"  X-Forwarded-Proto: {ctx.Request.Headers["X-Forwarded-Proto"]}");
+        Console.WriteLine($"  X-Original-Proto: {ctx.Request.Headers["X-Original-Proto"]}");
         Console.WriteLine($"  Headers: {string.Join(", ", ctx.Request.Headers.Select(h => $"{h.Key}={h.Value}"))}");
     }
     
