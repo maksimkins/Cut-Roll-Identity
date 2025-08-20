@@ -175,8 +175,24 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
-            var redirectUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication");
-            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            // Use the configured callback path from environment variables
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var callbackPath = configuration["OAuth:GoogleOAuth:CallbackPath"];
+            
+            if (string.IsNullOrEmpty(callbackPath))
+            {
+                // Fallback to generated URL if configuration is missing
+                var redirectUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication");
+                var prop = new AuthenticationProperties { RedirectUri = redirectUrl };
+                return Challenge(prop, "Google");
+            }
+            
+            // Build the full callback URL using the configured path
+            var fullCallbackUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{callbackPath}";
+            var properties = new AuthenticationProperties { RedirectUri = fullCallbackUrl };
+            
+            Console.WriteLine($"ExternalLogin - Using callback URL: {fullCallbackUrl}");
+            
             return Challenge(properties, "Google");
         }
         catch (Exception ex)
@@ -247,6 +263,9 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var callbackPath = configuration["OAuth:GoogleOAuth:CallbackPath"];
+            
             var config = new
             {
                 CallbackUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication"),
@@ -255,7 +274,9 @@ public class AuthenticationController : ControllerBase
                 RequestHost = HttpContext.Request.Host.ToString(),
                 RequestPath = HttpContext.Request.Path.ToString(),
                 FullCallbackUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(GoogleLoginCallback), "Authentication")}",
-                FullExternalLoginUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(ExternalLogin), "Authentication")}"
+                FullExternalLoginUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(ExternalLogin), "Authentication")}",
+                ConfiguredCallbackPath = callbackPath,
+                ConfiguredFullCallbackUrl = !string.IsNullOrEmpty(callbackPath) ? $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{callbackPath}" : null
             };
             
             return Ok(config);
