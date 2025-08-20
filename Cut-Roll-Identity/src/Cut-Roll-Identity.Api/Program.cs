@@ -60,6 +60,11 @@ forwardedHeaderOptions.KnownProxies.Clear();
 
 app.UseForwardedHeaders(forwardedHeaderOptions);
 
+app.Use((ctx, next) => { 
+    ctx.Request.Scheme = "https"; 
+    return next(); 
+});
+
 
 app.UseSwagger();
 app.UseSwaggerUI();
