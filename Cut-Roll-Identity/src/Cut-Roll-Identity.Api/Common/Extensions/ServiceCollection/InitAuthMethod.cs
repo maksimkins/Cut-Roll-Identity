@@ -65,47 +65,51 @@ public static class InitAuthMethod
             Console.WriteLine($"CallbackPath: {options.CallbackPath}");
             Console.WriteLine($"FullCallbackUrl: https://cutnroll.it.com{options.CallbackPath}");
 
-            // Configure OAuth events for debugging and proper handling
-            options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
-            {
-                OnRemoteFailure = context =>
-                {
-                    var errorMessage = context?.Failure?.Message ?? "Unknown OAuth error";
-                    var failureType = context?.Failure?.GetType().Name ?? "Unknown";
-                    
-                    Console.WriteLine($"OAuth Remote Failure: {failureType} - {errorMessage}");
-                    Console.WriteLine($"OAuth Remote Failure Stack: {context?.Failure?.StackTrace}");
-                    
-                    context?.HandleResponse();
-                    context?.Response.Redirect($"/Authentication/Error?message={Uri.EscapeDataString(errorMessage)}");
-                    return Task.CompletedTask;
-                },
+                             // Configure OAuth events for debugging and proper handling
+                 options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+                 {
+                     OnRemoteFailure = context =>
+                     {
+                         var errorMessage = context?.Failure?.Message ?? "Unknown OAuth error";
+                         var failureType = context?.Failure?.GetType().Name ?? "Unknown";
+                         
+                         Console.WriteLine($"OAuth Remote Failure: {failureType} - {errorMessage}");
+                         Console.WriteLine($"OAuth Remote Failure Stack: {context?.Failure?.StackTrace}");
+                         Console.WriteLine($"OAuth Remote Failure Inner: {context?.Failure?.InnerException?.Message}");
+                         
+                         context?.HandleResponse();
+                         context?.Response.Redirect($"/Authentication/Error?message={Uri.EscapeDataString(errorMessage)}");
+                         return Task.CompletedTask;
+                     },
 
-                OnTicketReceived = context =>
-                {
-                    Console.WriteLine("OAuth Ticket Received Successfully");
-                    return Task.CompletedTask;
-                },
+                     OnTicketReceived = context =>
+                     {
+                         Console.WriteLine("OAuth Ticket Received Successfully");
+                         Console.WriteLine($"Ticket Principal: {context?.Principal?.Identity?.Name}");
+                         return Task.CompletedTask;
+                     },
 
-                OnCreatingTicket = context =>
-                {
-                    Console.WriteLine("OAuth Creating Ticket");
-                    return Task.CompletedTask;
-                },
+                     OnCreatingTicket = context =>
+                     {
+                         Console.WriteLine("OAuth Creating Ticket");
+                         Console.WriteLine($"Identity: {context?.Identity?.Name}");
+                         Console.WriteLine($"Claims Count: {context?.Identity?.Claims?.Count() ?? 0}");
+                         return Task.CompletedTask;
+                     },
 
-                OnRedirectToAuthorizationEndpoint = context =>
-                {
-                    Console.WriteLine($"OAuth Redirect to: {context.RedirectUri}");
-                    context.Response.Redirect(context.RedirectUri);
-                    return Task.CompletedTask;
-                },
+                     OnRedirectToAuthorizationEndpoint = context =>
+                     {
+                         Console.WriteLine($"OAuth Redirect to: {context.RedirectUri}");
+                         context.Response.Redirect(context.RedirectUri);
+                         return Task.CompletedTask;
+                     },
 
-                OnAccessDenied = context =>
-                {
-                    Console.WriteLine($"OAuth Access Denied: {context.AccessDeniedPath}");
-                    return Task.CompletedTask;
-                }
-            };
+                     OnAccessDenied = context =>
+                     {
+                         Console.WriteLine($"OAuth Access Denied: {context.AccessDeniedPath}");
+                         return Task.CompletedTask;
+                     }
+                 };
         });
 
         serviceCollection.AddAuthorization(options => {

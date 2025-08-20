@@ -140,8 +140,15 @@ public class AuthenticationController : ControllerBase
             Console.WriteLine($"Request Host: {HttpContext.Request.Host}");
             Console.WriteLine($"Query String: {HttpContext.Request.QueryString}");
 
-            // Authenticate with the external scheme
-            var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+                         // Authenticate with the external scheme
+             Console.WriteLine("Attempting to authenticate with IdentityConstants.ExternalScheme...");
+             
+             // Check available authentication schemes
+             var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+             var schemes = await schemeProvider.GetAllSchemesAsync();
+             Console.WriteLine($"Available schemes: {string.Join(", ", schemes.Select(s => s.Name))}");
+             
+             var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
             
             Console.WriteLine($"Authentication Result - Succeeded: {result?.Succeeded}");
             Console.WriteLine($"Authentication Result - Principal: {(result?.Principal != null ? "Present" : "Null")}");
@@ -286,6 +293,10 @@ public class AuthenticationController : ControllerBase
             var clientId = configuration["OAuth:GoogleOAuth:ClientId"];
             var hasClientSecret = !string.IsNullOrEmpty(configuration["OAuth:GoogleOAuth:ClientSecret"]);
 
+            // Check authentication schemes
+            var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+            var schemes = schemeProvider.GetAllSchemesAsync().Result;
+
             var status = new
             {
                 OAuthConfigured = !string.IsNullOrEmpty(clientId) && hasClientSecret && !string.IsNullOrEmpty(callbackPath),
@@ -293,6 +304,9 @@ public class AuthenticationController : ControllerBase
                 HasClientSecret = hasClientSecret,
                 CallbackPath = callbackPath,
                 FullCallbackUrl = !string.IsNullOrEmpty(callbackPath) ? $"https://cutnroll.it.com{callbackPath}" : null,
+                AuthenticationSchemes = schemes.Select(s => s.Name).ToList(),
+                HasGoogleScheme = schemes.Any(s => s.Name == "Google"),
+                HasExternalScheme = schemes.Any(s => s.Name == IdentityConstants.ExternalScheme),
                 RequestInfo = new
                 {
                     Scheme = HttpContext.Request.Scheme,
@@ -308,4 +322,5 @@ public class AuthenticationController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+         
 }
