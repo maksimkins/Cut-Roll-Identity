@@ -1,84 +1,83 @@
 using Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplicationBuilder;
-using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Kestrel
-builder.WebHost.ConfigureKestrel(serverOptions =>
+builder.WebHost.ConfigureKestrel(options =>
 {
-    serverOptions.ListenAnyIP(80);
+    options.ListenAnyIP(80); 
 });
 
-// Setup variables
 builder.SetupVariables();
+builder.ConfigureEmailSender();
+builder.ConfigureRedirectOption();
+builder.ConfigureMessageBroker();
 
-// Configure services
-builder.Services.InitAspNetIdentity();
+builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
-builder.Services.InitCors();
+
+builder.Services.ConfigureExternalCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None; 
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Domain = null; // Allow any domain
+    options.Cookie.Path = "/";
+});
+
+// Configure authentication cookies for better Traefik compatibility
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Domain = null;
+    options.Cookie.Path = "/";
+});
+
 builder.Services.InitSwagger();
+builder.Services.InitCors();
 builder.Services.RegisterDependencyInjection();
-builder.Services.RegisterConfigureBlobStorage();
-builder.Services.ConfigureEmailSender();
-builder.Services.ConfigureMessageBroker();
-builder.Services.ConfigureRedirectOption();
+builder.Services.RegisterConfigureBlobStorage(builder.Configuration);
+
+builder.Services.AddAuthorization();
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
 var app = builder.Build();
 
-// Configure forwarded headers for Traefik
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+await app.UpdateDbAsync();
+await app.SetupRolesAsync();
+await app.SetupAdminAsync(builder.Configuration);
+
+var forwardedHeaderOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
-    RequireHeaderSymmetry = false,
-    ForwardedForHeaderName = "X-Original-For",
-    ForwardedProtoHeaderName = "X-Original-Proto",
-    ForwardedHostHeaderName = "X-Original-Host"
-});
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+};
+forwardedHeaderOptions.KnownNetworks.Clear();
+forwardedHeaderOptions.KnownProxies.Clear();
 
-// Configure HTTPS redirection
-app.UseHttpsRedirection();
+app.UseForwardedHeaders(forwardedHeaderOptions);
 
-// Configure CORS
-app.UseCors();
 
-// Configure authentication and authorization
+            
+
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseRouting();
+app.UseCors("AllowAllOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configure Swagger
-app.InitSwagger();
-
-// Configure routing
 app.MapControllers();
 
-// Setup database and admin user
-await app.UpdateDbAsync();
-await app.SetupRolesAsync();
-await app.SetupAdminAsync();
-
-// Custom middleware for debugging OAuth requests
-app.Use(async (context, next) =>
-{
-    var path = context.Request.Path.Value;
-    
-    // Log OAuth-related requests
-    if (path?.Contains("Authentication") == true || path?.Contains("signin-google") == true)
-    {
-        Console.WriteLine($"=== OAuth Request Debug ===");
-        Console.WriteLine($"Path: {context.Request.Path}");
-        Console.WriteLine($"Method: {context.Request.Method}");
-        Console.WriteLine($"Scheme: {context.Request.Scheme}");
-        Console.WriteLine($"Host: {context.Request.Host}");
-        Console.WriteLine($"QueryString: {context.Request.QueryString}");
-        Console.WriteLine($"X-Forwarded-Proto: {context.Request.Headers["X-Forwarded-Proto"]}");
-        Console.WriteLine($"X-Original-Proto: {context.Request.Headers["X-Original-Proto"]}");
-        Console.WriteLine($"X-Forwarded-Host: {context.Request.Headers["X-Forwarded-Host"]}");
-        Console.WriteLine($"X-Original-Host: {context.Request.Headers["X-Original-Host"]}");
-    }
-    
-    await next();
-});
 
 app.Run();
