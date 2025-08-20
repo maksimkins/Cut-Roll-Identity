@@ -101,49 +101,46 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    // [HttpGet]
-    // public async Task<IActionResult> ExternalLoginCallback()
-    // {
-    //     try
-    //     {
-    //         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-
-    //          if (!result.Succeeded || result?.Principal == null)
-    //             return Unauthorized($"Google authentication failed {result} {result?.Succeeded} {result?.Principal}");
-
-    //         var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-    //         var name = result.Principal.FindFirstValue(ClaimTypes.Name);
-    //         var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-    //         //var pictureUrl = result.Principal.FindFirstValue("picture"); 
-        
-    //         var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
-
-    //         var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
-
-    //         return Redirect(frontendUrl);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //        return this.InternalServerError(ex.Message);
-    //     }
-    // }
-
-    [HttpGet("/signin-google")]
+    [HttpGet]
     public async Task<IActionResult> GoogleLoginCallback()
     {
         try
         {
+            // Log the request for debugging
+            var queryString = HttpContext.Request.QueryString.ToString();
+            var headers = string.Join(", ", HttpContext.Request.Headers.Select(h => $"{h.Key}={h.Value}"));
+            
+            // Check if we have the authentication result
             var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-            if (!result.Succeeded || result?.Principal == null)
+            
+            if (!result.Succeeded)
             {
-                 var failure = result?.Failure?.Message ?? "Unknown error";
-                return Unauthorized($"Google auth failed: {failure}");
+                var failure = result?.Failure?.Message ?? "Unknown error";
+                var failureType = result?.Failure?.GetType().Name ?? "Unknown";
+                
+                // Log the failure details
+                Console.WriteLine($"Google OAuth failed: {failureType} - {failure}");
+                Console.WriteLine($"Query string: {queryString}");
+                Console.WriteLine($"Headers: {headers}");
+                
+                return Unauthorized($"Google auth failed: {failureType} - {failure}");
             }
-                   
+            
+            if (result?.Principal == null)
+            {
+                Console.WriteLine("Google OAuth succeeded but Principal is null");
+                return Unauthorized("Google auth failed: Principal is null");
+            }
 
             var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             var name = result.Principal.FindFirstValue(ClaimTypes.Name);
             var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(email))
+            {
+                Console.WriteLine("Google OAuth succeeded but email is null");
+                return Unauthorized("Google auth failed: Email not provided");
+            }
 
             var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
             var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
@@ -152,6 +149,8 @@ public class AuthenticationController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Exception in GoogleLoginCallback: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
             return this.InternalServerError(ex.Message);
         }
     }
@@ -223,6 +222,34 @@ public class AuthenticationController : ControllerBase
         }
     }
     
+    [HttpGet]
+    public IActionResult Error(string message)
+    {
+        return BadRequest(new { error = message ?? "Unknown OAuth error" });
+    }
+
+    [HttpGet]
+    public IActionResult OAuthConfig()
+    {
+        try
+        {
+            var config = new
+            {
+                CallbackUrl = Url.Action(nameof(GoogleLoginCallback), "Authentication"),
+                ExternalLoginUrl = Url.Action(nameof(ExternalLogin), "Authentication"),
+                RequestScheme = HttpContext.Request.Scheme,
+                RequestHost = HttpContext.Request.Host.ToString(),
+                RequestPath = HttpContext.Request.Path.ToString()
+            };
+            
+            return Ok(config);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpPut]
     public async Task<IActionResult> UpdateTokenAsync([Required, FromBody]Guid refresh)
     {

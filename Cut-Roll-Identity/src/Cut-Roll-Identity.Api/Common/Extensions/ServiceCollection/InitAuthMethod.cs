@@ -52,7 +52,23 @@ public static class InitAuthMethod
                 options.Scope.Add("profile");
                 options.Scope.Add("email");
 
-                options.SaveTokens = true; 
+                options.SaveTokens = true;
+                
+                // Configure events for debugging
+                options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+                {
+                    OnRemoteFailure = context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.Redirect("/error?message=" + context?.Failure?.Message);
+                        return Task.CompletedTask;
+                    },
+                    OnTicketReceived = context =>
+                    {
+                        // Log successful authentication
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         serviceCollection.AddAuthorization(options => {

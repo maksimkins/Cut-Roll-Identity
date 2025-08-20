@@ -22,7 +22,18 @@ builder.Services.InitAuth(builder.Configuration);
 builder.Services.ConfigureExternalCookie(options =>
 {
     options.Cookie.SameSite = SameSiteMode.None; 
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; 
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Domain = null; // Allow any domain
+    options.Cookie.Path = "/";
+});
+
+// Configure authentication cookies for better Traefik compatibility
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.Domain = null;
+    options.Cookie.Path = "/";
 });
 
 builder.Services.InitSwagger();
@@ -54,9 +65,23 @@ forwardedHeaderOptions.KnownProxies.Clear();
 
 app.UseForwardedHeaders(forwardedHeaderOptions);
 
-app.Use((ctx, next) => { 
+// Debug middleware to log request details
+app.Use(async (ctx, next) => 
+{ 
     ctx.Request.Scheme = "https"; 
-    return next(); 
+    
+    // Log request details for debugging
+    if (ctx.Request.Path.StartsWithSegments("/Authentication/GoogleLoginCallback"))
+    {
+        Console.WriteLine($"OAuth Callback Request:");
+        Console.WriteLine($"  Path: {ctx.Request.Path}");
+        Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
+        Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
+        Console.WriteLine($"  Host: {ctx.Request.Host}");
+        Console.WriteLine($"  Headers: {string.Join(", ", ctx.Request.Headers.Select(h => $"{h.Key}={h.Value}"))}");
+    }
+    
+    await next(); 
 });
 
 
