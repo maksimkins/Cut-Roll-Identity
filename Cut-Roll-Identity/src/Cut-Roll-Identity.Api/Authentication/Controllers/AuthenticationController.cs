@@ -448,6 +448,64 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ManualOAuthCallback()
+    {
+        try
+        {
+            var code = HttpContext.Request.Query["code"].FirstOrDefault();
+            var state = HttpContext.Request.Query["state"].FirstOrDefault();
+            
+            if (string.IsNullOrEmpty(code))
+            {
+                return BadRequest(new { error = "No code parameter found" });
+            }
+            
+            Console.WriteLine("=== Manual OAuth Callback Started ===");
+            Console.WriteLine($"Code: {code}");
+            Console.WriteLine($"State: {state}");
+            
+            // Get OAuth configuration
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var clientId = configuration["OAuth:GoogleOAuth:ClientId"];
+            var clientSecret = configuration["OAuth:GoogleOAuth:ClientSecret"];
+            var redirectUri = $"https://cutnroll.it.com{configuration["OAuth:GoogleOAuth:CallbackPath"]}";
+            
+            Console.WriteLine($"ClientId: {clientId}");
+            Console.WriteLine($"HasClientSecret: {!string.IsNullOrEmpty(clientSecret)}");
+            Console.WriteLine($"RedirectUri: {redirectUri}");
+            
+            var result = new
+            {
+                HasCode = !string.IsNullOrEmpty(code),
+                HasState = !string.IsNullOrEmpty(state),
+                Code = code,
+                State = state,
+                OAuthConfig = new
+                {
+                    HasClientId = !string.IsNullOrEmpty(clientId),
+                    HasClientSecret = !string.IsNullOrEmpty(clientSecret),
+                    RedirectUri = redirectUri
+                },
+                RequestInfo = new
+                {
+                    Scheme = HttpContext.Request.Scheme,
+                    Host = HttpContext.Request.Host.ToString(),
+                    Path = HttpContext.Request.Path.ToString(),
+                    QueryString = HttpContext.Request.QueryString.ToString()
+                }
+            };
+            
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception in ManualOAuthCallback: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpPut]
     public async Task<IActionResult> UpdateTokenAsync([Required, FromBody]Guid refresh)
     {

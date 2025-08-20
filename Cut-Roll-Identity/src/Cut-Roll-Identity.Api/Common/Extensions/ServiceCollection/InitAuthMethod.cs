@@ -62,6 +62,9 @@ public static class InitAuthMethod
                 // Set explicit redirect URI to force HTTPS
                 var redirectUri = $"https://cutnroll.it.com{googleOAuthOptions.CallbackPath}";
                 Console.WriteLine($"OAuth Configuration - Redirect URI: {redirectUri}");
+                Console.WriteLine($"OAuth Configuration - ClientId: {googleOAuthOptions.ClientId}");
+                Console.WriteLine($"OAuth Configuration - HasClientSecret: {!string.IsNullOrEmpty(googleOAuthOptions.ClientSecret)}");
+                Console.WriteLine($"OAuth Configuration - CallbackPath: {googleOAuthOptions.CallbackPath}");
                 
                 // Force HTTPS for OAuth
                 options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
