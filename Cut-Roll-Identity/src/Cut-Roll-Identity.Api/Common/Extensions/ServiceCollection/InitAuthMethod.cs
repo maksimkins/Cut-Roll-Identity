@@ -54,6 +54,10 @@ public static class InitAuthMethod
 
                 options.SaveTokens = true;
                 
+                // Force HTTPS for OAuth
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.CorrelationCookie.SameSite = SameSiteMode.None;
+                
                 // Configure events for debugging
                 options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
                 {
@@ -73,6 +77,12 @@ public static class InitAuthMethod
                     OnCreatingTicket = context =>
                     {
                         Console.WriteLine("OAuth Creating Ticket");
+                        return Task.CompletedTask;
+                    },
+                    OnRedirectToAuthorizationEndpoint = context =>
+                    {
+                        Console.WriteLine($"OAuth Redirect to: {context.RedirectUri}");
+                        context.Response.Redirect(context.RedirectUri);
                         return Task.CompletedTask;
                     }
                 };

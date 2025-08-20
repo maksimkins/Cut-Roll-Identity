@@ -130,9 +130,11 @@ public class AuthenticationController : ControllerBase
                 var failure = result?.Failure?.Message ?? "Unknown error";
                 var failureType = result?.Failure?.GetType().Name ?? "Unknown";
                 var failureStackTrace = result?.Failure?.StackTrace ?? "No stack trace";
+                var failureInnerException = result?.Failure?.InnerException?.Message ?? "No inner exception";
                 
                 // Log the failure details
                 Console.WriteLine($"Google OAuth failed: {failureType} - {failure}");
+                Console.WriteLine($"Failure inner exception: {failureInnerException}");
                 Console.WriteLine($"Failure stack trace: {failureStackTrace}");
                 Console.WriteLine($"Query string: {queryString}");
                 Console.WriteLine($"Headers: {headers}");
@@ -307,10 +309,46 @@ public class AuthenticationController : ControllerBase
                     HasClientId = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_ID")),
                     HasClientSecret = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_SECRET")),
                     CallbackPath = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CALLBACK_PATH")
+                },
+                RedirectConfig = new
+                {
+                    Scheme = _redirectConfig.Scheme,
+                    Host = _redirectConfig.Host,
+                    Path = _redirectConfig.Path
                 }
             };
             
             return Ok(config);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult TestOAuthCallback()
+    {
+        try
+        {
+            var queryString = HttpContext.Request.QueryString.ToString();
+            var code = HttpContext.Request.Query["code"].FirstOrDefault();
+            var state = HttpContext.Request.Query["state"].FirstOrDefault();
+            
+            var result = new
+            {
+                HasCode = !string.IsNullOrEmpty(code),
+                HasState = !string.IsNullOrEmpty(state),
+                CodeLength = code?.Length ?? 0,
+                StateLength = state?.Length ?? 0,
+                QueryString = queryString,
+                RequestScheme = HttpContext.Request.Scheme,
+                RequestHost = HttpContext.Request.Host.ToString(),
+                RequestPath = HttpContext.Request.Path.ToString(),
+                Headers = HttpContext.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
+            };
+            
+            return Ok(result);
         }
         catch (Exception ex)
         {
