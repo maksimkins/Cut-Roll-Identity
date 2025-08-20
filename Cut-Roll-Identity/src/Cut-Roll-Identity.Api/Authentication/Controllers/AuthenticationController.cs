@@ -12,6 +12,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Cut_Roll_Identity.Api.Common.Configurations;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace Cut_Roll_Identity.Api.Authentication.Controllers;
 
@@ -130,66 +131,64 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GoogleLoginCallback()
+    public async Task<IActionResult> GoogleLoginCallback(string code, string state)
     {
         try
         {
-            Console.WriteLine("=== Google OAuth Callback Started ===");
-            Console.WriteLine($"Request Path: {HttpContext.Request.Path}");
-            Console.WriteLine($"Request Scheme: {HttpContext.Request.Scheme}");
-            Console.WriteLine($"Request Host: {HttpContext.Request.Host}");
-            Console.WriteLine($"Query String: {HttpContext.Request.QueryString}");
-
-                         // Authenticate with the external scheme
-             Console.WriteLine("Attempting to authenticate with IdentityConstants.ExternalScheme...");
-             
-             // Check available authentication schemes
-             var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
-             var schemes = await schemeProvider.GetAllSchemesAsync();
-             Console.WriteLine($"Available schemes: {string.Join(", ", schemes.Select(s => s.Name))}");
-             
-             var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-            
-            Console.WriteLine($"Authentication Result - Succeeded: {result?.Succeeded}");
-            Console.WriteLine($"Authentication Result - Principal: {(result?.Principal != null ? "Present" : "Null")}");
-
-            if (result?.Succeeded != true)
+            var googleOAuthSection = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetSection("OAuth:GoogleOAuth");
+            var clientId = googleOAuthSection["ClientId"];
+            var clientSecret = googleOAuthSection["ClientSecret"];
+            var redirectUri = $"https://cutnroll.it.com{googleOAuthSection["CallbackPath"]}";
+    
+            // 1️⃣ Exchange code for tokens
+            using var httpClient = new HttpClient();
+            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token")
             {
-                var errorMessage = result?.Failure?.Message ?? "Authentication failed";
-                var failureType = result?.Failure?.GetType().Name ?? "Unknown";
-                
-                Console.WriteLine($"OAuth Authentication Failed: {failureType} - {errorMessage}");
-                Console.WriteLine($"Failure Stack Trace: {result?.Failure?.StackTrace}");
-                
-                return Unauthorized($"Google authentication failed: {errorMessage}");
-            }
-
-            if (result?.Principal == null)
-            {
-                Console.WriteLine("OAuth succeeded but Principal is null");
-                return Unauthorized("Google authentication failed: No user principal");
-            }
-
-            // Extract user information
-            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-            var name = result.Principal.FindFirstValue(ClaimTypes.Name);
-            var externalId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            Console.WriteLine($"User Email: {email}");
-            Console.WriteLine($"User Name: {name}");
-            Console.WriteLine($"External ID: {externalId}");
-
+                Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "code", code },
+                    { "client_id", clientId ?? throw new ArgumentNullException("ClientId is not configured") },
+                    { "client_secret", clientSecret  ?? throw new ArgumentNullException("ClientSecret is not configured") },
+                    { "redirect_uri", redirectUri ?? throw new ArgumentNullException("RedirectUri is not configured") },
+                    { "grant_type", "authorization_code" }
+                })
+            };
+    
+            var tokenResponse = await httpClient.SendAsync(tokenRequest);
+            tokenResponse.EnsureSuccessStatusCode();
+            var tokenJson = await tokenResponse.Content.ReadAsStringAsync();
+            var tokenData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(tokenJson)!;
+    
+            var accessToken = tokenData["access_token"].GetString();
+            if (string.IsNullOrEmpty(accessToken))
+                return Unauthorized("Failed to obtain Google access token");
+    
+            // 2️⃣ Get user info from Google
+            var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
+            userInfoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+    
+            var userInfoResponse = await httpClient.SendAsync(userInfoRequest);
+            userInfoResponse.EnsureSuccessStatusCode();
+            var userInfoJson = await userInfoResponse.Content.ReadAsStringAsync();
+            var userInfo = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfoJson)!;
+    
+            var email = userInfo.GetValueOrDefault("email");
+            var name = userInfo.GetValueOrDefault("name");
+            var externalId = userInfo.GetValueOrDefault("id");
+    
             if (string.IsNullOrEmpty(email))
-            {
-                Console.WriteLine("OAuth succeeded but email is null");
-                return Unauthorized("Google authentication failed: Email not provided");
-            }
-
+                return Unauthorized("Google did not return an email");
+    
+    
+        
+    
             // Sign in the user
-            var accessToken = await _identityAuthService.SignInWithExternalProviderAsync(email, name, externalId, null);
+            var accessTokenMy = await _identityAuthService.SignInWithExternalProviderAsync(
+                email, name, externalId, null
+            );
             
             // Build redirect URL
-            var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessToken.Jwt}&refresh={accessToken.Refresh}";
+            var frontendUrl = $"{_redirectConfig.Scheme}://{_redirectConfig.Host}{_redirectConfig.Path}?jwt={accessTokenMy.Jwt}&refresh={accessTokenMy.Refresh}";
             
             Console.WriteLine($"Redirecting to frontend: {frontendUrl}");
 
@@ -293,10 +292,6 @@ public class AuthenticationController : ControllerBase
             var clientId = configuration["OAuth:GoogleOAuth:ClientId"];
             var hasClientSecret = !string.IsNullOrEmpty(configuration["OAuth:GoogleOAuth:ClientSecret"]);
 
-            // Check authentication schemes
-            var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
-            var schemes = schemeProvider.GetAllSchemesAsync().Result;
-
             var status = new
             {
                 OAuthConfigured = !string.IsNullOrEmpty(clientId) && hasClientSecret && !string.IsNullOrEmpty(callbackPath),
@@ -304,9 +299,6 @@ public class AuthenticationController : ControllerBase
                 HasClientSecret = hasClientSecret,
                 CallbackPath = callbackPath,
                 FullCallbackUrl = !string.IsNullOrEmpty(callbackPath) ? $"https://cutnroll.it.com{callbackPath}" : null,
-                AuthenticationSchemes = schemes.Select(s => s.Name).ToList(),
-                HasGoogleScheme = schemes.Any(s => s.Name == "Google"),
-                HasExternalScheme = schemes.Any(s => s.Name == IdentityConstants.ExternalScheme),
                 RequestInfo = new
                 {
                     Scheme = HttpContext.Request.Scheme,
@@ -322,5 +314,4 @@ public class AuthenticationController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
-         
 }
