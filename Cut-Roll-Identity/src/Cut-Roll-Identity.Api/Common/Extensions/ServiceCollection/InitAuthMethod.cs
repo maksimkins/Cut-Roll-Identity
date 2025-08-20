@@ -105,11 +105,6 @@ public static class InitAuthMethod
                     {
                         Console.WriteLine($"OAuth Access Denied: {context.AccessDeniedPath}");
                         return Task.CompletedTask;
-                    },
-                    OnRemoteError = context =>
-                    {
-                        Console.WriteLine($"OAuth Remote Error: {context?.Failure?.Message}");
-                        return Task.CompletedTask;
                     }
                 };
             });
