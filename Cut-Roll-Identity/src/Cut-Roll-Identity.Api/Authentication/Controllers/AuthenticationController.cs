@@ -345,7 +345,57 @@ public class AuthenticationController : ControllerBase
                 RequestScheme = HttpContext.Request.Scheme,
                 RequestHost = HttpContext.Request.Host.ToString(),
                 RequestPath = HttpContext.Request.Path.ToString(),
-                Headers = HttpContext.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
+                Headers = HttpContext.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
+                ForwardedHeaders = new
+                {
+                    XForwardedProto = HttpContext.Request.Headers["X-Forwarded-Proto"].ToString(),
+                    XForwardedHost = HttpContext.Request.Headers["X-Forwarded-Host"].ToString(),
+                    XForwardedPort = HttpContext.Request.Headers["X-Forwarded-Port"].ToString(),
+                    XOriginalProto = HttpContext.Request.Headers["X-Original-Proto"].ToString(),
+                    HasXForwardedProto = HttpContext.Request.Headers.ContainsKey("X-Forwarded-Proto"),
+                    HasXForwardedHost = HttpContext.Request.Headers.ContainsKey("X-Forwarded-Host"),
+                    HasXForwardedPort = HttpContext.Request.Headers.ContainsKey("X-Forwarded-Port"),
+                    HasXOriginalProto = HttpContext.Request.Headers.ContainsKey("X-Original-Proto")
+                }
+            };
+            
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult TestOAuthFlow()
+    {
+        try
+        {
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var callbackPath = configuration["OAuth:GoogleOAuth:CallbackPath"];
+            
+            // Test the OAuth flow manually
+            var fullCallbackUrl = $"https://cutnroll.it.com{callbackPath}";
+            
+            var result = new
+            {
+                ConfiguredCallbackPath = callbackPath,
+                FullCallbackUrl = fullCallbackUrl,
+                CurrentRequest = new
+                {
+                    Scheme = HttpContext.Request.Scheme,
+                    Host = HttpContext.Request.Host.ToString(),
+                    Path = HttpContext.Request.Path.ToString(),
+                    QueryString = HttpContext.Request.QueryString.ToString()
+                },
+                Headers = new
+                {
+                    XForwardedProto = HttpContext.Request.Headers["X-Forwarded-Proto"].ToString(),
+                    XForwardedHost = HttpContext.Request.Headers["X-Forwarded-Host"].ToString(),
+                    XForwardedPort = HttpContext.Request.Headers["X-Forwarded-Port"].ToString(),
+                    XOriginalProto = HttpContext.Request.Headers["X-Original-Proto"].ToString()
+                }
             };
             
             return Ok(result);

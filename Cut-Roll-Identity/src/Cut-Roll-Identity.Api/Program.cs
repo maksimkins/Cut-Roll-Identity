@@ -68,23 +68,20 @@ app.UseForwardedHeaders(forwardedHeaderOptions);
 // Debug middleware to log request details
             app.Use(async (ctx, next) => 
             { 
-                // Force HTTPS for OAuth-related requests to fix protocol mismatch
-                if (ctx.Request.Path.StartsWithSegments("/Authentication/") || 
-                    ctx.Request.Path.StartsWithSegments("/signin-google"))
+                // Force HTTPS for all requests to fix protocol mismatch with Traefik
+                if (ctx.Request.Headers.ContainsKey("X-Original-Proto") && 
+                    ctx.Request.Headers["X-Original-Proto"] == "http")
                 {
                     ctx.Request.Scheme = "https";
                     
-                    // Also set the X-Forwarded-Proto header if it's missing
-                    if (string.IsNullOrEmpty(ctx.Request.Headers["X-Forwarded-Proto"]))
-                    {
-                        ctx.Request.Headers["X-Forwarded-Proto"] = "https";
-                    }
+                    // Set the X-Forwarded-Proto header
+                    ctx.Request.Headers["X-Forwarded-Proto"] = "https";
                     
-                    // Force all forwarded headers for OAuth
+                    // Force all forwarded headers
                     ctx.Request.Headers["X-Forwarded-Host"] = ctx.Request.Host.ToString();
                     ctx.Request.Headers["X-Forwarded-Port"] = "443";
                     
-                    Console.WriteLine($"OAuth Request (Forced HTTPS):");
+                    Console.WriteLine($"Request (Forced HTTPS):");
                     Console.WriteLine($"  Path: {ctx.Request.Path}");
                     Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
                     Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
