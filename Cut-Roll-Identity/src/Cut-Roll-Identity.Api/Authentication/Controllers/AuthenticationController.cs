@@ -133,7 +133,7 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
-            var result = await HttpContext.AuthenticateAsync("Google");
+            var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
             if (!result.Succeeded || result?.Principal == null)
             {
                  var failure = result?.Failure?.Message ?? "Unknown error";

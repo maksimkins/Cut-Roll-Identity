@@ -19,14 +19,8 @@ builder.ConfigureMessageBroker();
 builder.Services.InitAspnetIdentity(builder.Configuration);
 builder.Services.InitAuth(builder.Configuration);
 
-builder.Services.PostConfigure<GoogleOptions>(options =>
-{
-    options.CorrelationCookie.Path = "/"; // or "/api/identity" if you had PathBase
-});
-
 builder.Services.ConfigureExternalCookie(options =>
 {
-    options.Cookie.Path = "/"; // same as above
     options.Cookie.SameSite = SameSiteMode.None; 
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; 
 });
