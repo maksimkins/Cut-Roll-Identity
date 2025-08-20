@@ -68,12 +68,10 @@ app.UseForwardedHeaders(forwardedHeaderOptions);
 // Debug middleware to log request details
 app.Use(async (ctx, next) => 
 { 
-    // Don't force HTTPS here, let the forwarded headers handle it
-    // ctx.Request.Scheme = "https"; 
-    
-    // Log request details for debugging
+    // Force HTTPS for OAuth callbacks to fix protocol mismatch
     if (ctx.Request.Path.StartsWithSegments("/Authentication/GoogleLoginCallback"))
     {
+        ctx.Request.Scheme = "https";
         Console.WriteLine($"OAuth Callback Request:");
         Console.WriteLine($"  Path: {ctx.Request.Path}");
         Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");

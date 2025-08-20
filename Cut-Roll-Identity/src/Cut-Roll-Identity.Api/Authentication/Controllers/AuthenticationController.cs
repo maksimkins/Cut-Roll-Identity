@@ -111,15 +111,29 @@ public class AuthenticationController : ControllerBase
             var headers = string.Join(", ", HttpContext.Request.Headers.Select(h => $"{h.Key}={h.Value}"));
             
             // Check if we have the authentication result
+            Console.WriteLine("=== Google OAuth Callback Started ===");
+            Console.WriteLine($"Query string: {queryString}");
+            Console.WriteLine($"Headers: {headers}");
+            Console.WriteLine($"Request Path: {HttpContext.Request.Path}");
+            Console.WriteLine($"Request Scheme: {HttpContext.Request.Scheme}");
+            Console.WriteLine($"Request Host: {HttpContext.Request.Host}");
+            
+            // Check if we have the authentication result
+            Console.WriteLine("Attempting to authenticate with IdentityConstants.ExternalScheme...");
             var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
             
-            if (!result.Succeeded)
+            Console.WriteLine($"Authentication result - Succeeded: {result?.Succeeded}");
+            Console.WriteLine($"Authentication result - Principal: {(result?.Principal != null ? "Present" : "Null")}");
+            
+            if (result != null && !result.Succeeded)
             {
                 var failure = result?.Failure?.Message ?? "Unknown error";
                 var failureType = result?.Failure?.GetType().Name ?? "Unknown";
+                var failureStackTrace = result?.Failure?.StackTrace ?? "No stack trace";
                 
                 // Log the failure details
                 Console.WriteLine($"Google OAuth failed: {failureType} - {failure}");
+                Console.WriteLine($"Failure stack trace: {failureStackTrace}");
                 Console.WriteLine($"Query string: {queryString}");
                 Console.WriteLine($"Headers: {headers}");
                 
