@@ -1,110 +1,84 @@
 using Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplicationBuilder;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.HttpOverrides;
+using Cut_Roll_Identity.Api.Common.Extensions.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureKestrel(options =>
+// Configure Kestrel
+builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    options.ListenAnyIP(80); 
+    serverOptions.ListenAnyIP(80);
 });
 
+// Setup variables
 builder.SetupVariables();
-builder.ConfigureEmailSender();
-builder.ConfigureRedirectOption();
-builder.ConfigureMessageBroker();
 
-builder.Services.InitAspnetIdentity(builder.Configuration);
+// Configure services
+builder.Services.InitAspNetIdentity();
 builder.Services.InitAuth(builder.Configuration);
-
-builder.Services.ConfigureExternalCookie(options =>
-{
-    options.Cookie.SameSite = SameSiteMode.None; 
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.Domain = null; // Allow any domain
-    options.Cookie.Path = "/";
-});
-
-// Configure authentication cookies for better Traefik compatibility
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.Domain = null;
-    options.Cookie.Path = "/";
-});
-
-builder.Services.InitSwagger();
 builder.Services.InitCors();
+builder.Services.InitSwagger();
 builder.Services.RegisterDependencyInjection();
-builder.Services.RegisterConfigureBlobStorage(builder.Configuration);
-
-builder.Services.AddAuthorization();
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
+builder.Services.RegisterConfigureBlobStorage();
+builder.Services.ConfigureEmailSender();
+builder.Services.ConfigureMessageBroker();
+builder.Services.ConfigureRedirectOption();
 
 var app = builder.Build();
 
-await app.UpdateDbAsync();
-await app.SetupRolesAsync();
-await app.SetupAdminAsync(builder.Configuration);
-
-var forwardedHeaderOptions = new ForwardedHeadersOptions
+// Configure forwarded headers for Traefik
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
-};
-forwardedHeaderOptions.KnownNetworks.Clear();
-forwardedHeaderOptions.KnownProxies.Clear();
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+    RequireHeaderSymmetry = false,
+    ForwardedForHeaderName = "X-Original-For",
+    ForwardedProtoHeaderName = "X-Original-Proto",
+    ForwardedHostHeaderName = "X-Original-Host"
+});
 
-app.UseForwardedHeaders(forwardedHeaderOptions);
+// Configure HTTPS redirection
+app.UseHttpsRedirection();
 
-// Debug middleware to log request details
-            app.Use(async (ctx, next) => 
-            { 
-                // Force HTTPS for all requests to fix protocol mismatch with Traefik
-                if (ctx.Request.Headers.ContainsKey("X-Original-Proto") && 
-                    ctx.Request.Headers["X-Original-Proto"] == "http")
-                {
-                    ctx.Request.Scheme = "https";
-                    
-                    // Set the X-Forwarded-Proto header
-                    ctx.Request.Headers["X-Forwarded-Proto"] = "https";
-                    
-                    // Force all forwarded headers
-                    ctx.Request.Headers["X-Forwarded-Host"] = ctx.Request.Host.ToString();
-                    ctx.Request.Headers["X-Forwarded-Port"] = "443";
-                    
-                    Console.WriteLine($"Request (Forced HTTPS):");
-                    Console.WriteLine($"  Path: {ctx.Request.Path}");
-                    Console.WriteLine($"  QueryString: {ctx.Request.QueryString}");
-                    Console.WriteLine($"  Scheme: {ctx.Request.Scheme}");
-                    Console.WriteLine($"  Host: {ctx.Request.Host}");
-                    Console.WriteLine($"  X-Forwarded-Proto: {ctx.Request.Headers["X-Forwarded-Proto"]}");
-                    Console.WriteLine($"  X-Forwarded-Host: {ctx.Request.Headers["X-Forwarded-Host"]}");
-                    Console.WriteLine($"  X-Forwarded-Port: {ctx.Request.Headers["X-Forwarded-Port"]}");
-                    Console.WriteLine($"  X-Original-Proto: {ctx.Request.Headers["X-Original-Proto"]}");
-                }
-                
-                await next(); 
-            });
+// Configure CORS
+app.UseCors();
 
-
-app.UseSwagger();
-app.UseSwaggerUI();
-
-app.UseRouting();
-app.UseCors("AllowAllOrigins");
+// Configure authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Configure Swagger
+app.InitSwagger();
+
+// Configure routing
 app.MapControllers();
 
+// Setup database and admin user
+await app.UpdateDbAsync();
+await app.SetupRolesAsync();
+await app.SetupAdminAsync();
+
+// Custom middleware for debugging OAuth requests
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value;
+    
+    // Log OAuth-related requests
+    if (path?.Contains("Authentication") == true || path?.Contains("signin-google") == true)
+    {
+        Console.WriteLine($"=== OAuth Request Debug ===");
+        Console.WriteLine($"Path: {context.Request.Path}");
+        Console.WriteLine($"Method: {context.Request.Method}");
+        Console.WriteLine($"Scheme: {context.Request.Scheme}");
+        Console.WriteLine($"Host: {context.Request.Host}");
+        Console.WriteLine($"QueryString: {context.Request.QueryString}");
+        Console.WriteLine($"X-Forwarded-Proto: {context.Request.Headers["X-Forwarded-Proto"]}");
+        Console.WriteLine($"X-Original-Proto: {context.Request.Headers["X-Original-Proto"]}");
+        Console.WriteLine($"X-Forwarded-Host: {context.Request.Headers["X-Forwarded-Host"]}");
+        Console.WriteLine($"X-Original-Host: {context.Request.Headers["X-Original-Host"]}");
+    }
+    
+    await next();
+});
 
 app.Run();
