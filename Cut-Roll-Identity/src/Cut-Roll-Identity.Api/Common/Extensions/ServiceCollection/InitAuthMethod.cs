@@ -75,9 +75,13 @@ public static class InitAuthMethod
                         context.HandleResponse();
                         var errorMessage = context?.Failure?.Message ?? "Unknown OAuth error";
                         var innerException = context?.Failure?.InnerException?.Message ?? "No inner exception";
-                        Console.WriteLine($"OAuth Remote Failure: {errorMessage}");
+                        var failureType = context?.Failure?.GetType().Name ?? "Unknown";
+                        var stackTrace = context?.Failure?.StackTrace ?? "No stack trace";
+                        
+                        Console.WriteLine($"OAuth Remote Failure: {failureType} - {errorMessage}");
                         Console.WriteLine($"OAuth Remote Failure Inner: {innerException}");
-                        Console.WriteLine($"OAuth Remote Failure Type: {context?.Failure?.GetType().Name}");
+                        Console.WriteLine($"OAuth Remote Failure Stack: {stackTrace}");
+                        
                         context?.Response.Redirect($"/Authentication/Error?message={Uri.EscapeDataString(errorMessage)}");
                         return Task.CompletedTask;
                     },
@@ -100,6 +104,11 @@ public static class InitAuthMethod
                     OnAccessDenied = context =>
                     {
                         Console.WriteLine($"OAuth Access Denied: {context.AccessDeniedPath}");
+                        return Task.CompletedTask;
+                    },
+                    OnRemoteError = context =>
+                    {
+                        Console.WriteLine($"OAuth Remote Error: {context?.Failure?.Message}");
                         return Task.CompletedTask;
                     }
                 };

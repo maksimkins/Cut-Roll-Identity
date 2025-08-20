@@ -406,6 +406,48 @@ public class AuthenticationController : ControllerBase
         }
     }
 
+    [HttpGet]
+    public IActionResult TestOAuthCallbackWithCode()
+    {
+        try
+        {
+            var code = HttpContext.Request.Query["code"].FirstOrDefault();
+            var state = HttpContext.Request.Query["state"].FirstOrDefault();
+            
+            if (string.IsNullOrEmpty(code))
+            {
+                return BadRequest(new { error = "No code parameter found" });
+            }
+            
+            var result = new
+            {
+                HasCode = !string.IsNullOrEmpty(code),
+                HasState = !string.IsNullOrEmpty(state),
+                CodeLength = code?.Length ?? 0,
+                StateLength = state?.Length ?? 0,
+                Code = code,
+                State = state,
+                RequestScheme = HttpContext.Request.Scheme,
+                RequestHost = HttpContext.Request.Host.ToString(),
+                RequestPath = HttpContext.Request.Path.ToString(),
+                QueryString = HttpContext.Request.QueryString.ToString(),
+                Headers = new
+                {
+                    XForwardedProto = HttpContext.Request.Headers["X-Forwarded-Proto"].ToString(),
+                    XForwardedHost = HttpContext.Request.Headers["X-Forwarded-Host"].ToString(),
+                    XForwardedPort = HttpContext.Request.Headers["X-Forwarded-Port"].ToString(),
+                    XOriginalProto = HttpContext.Request.Headers["X-Original-Proto"].ToString()
+                }
+            };
+            
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpPut]
     public async Task<IActionResult> UpdateTokenAsync([Required, FromBody]Guid refresh)
     {
