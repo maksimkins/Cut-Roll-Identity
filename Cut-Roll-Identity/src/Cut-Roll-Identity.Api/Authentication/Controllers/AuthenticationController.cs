@@ -239,7 +239,40 @@ public class AuthenticationController : ControllerBase
                 ExternalLoginUrl = Url.Action(nameof(ExternalLogin), "Authentication"),
                 RequestScheme = HttpContext.Request.Scheme,
                 RequestHost = HttpContext.Request.Host.ToString(),
-                RequestPath = HttpContext.Request.Path.ToString()
+                RequestPath = HttpContext.Request.Path.ToString(),
+                FullCallbackUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(GoogleLoginCallback), "Authentication")}",
+                FullExternalLoginUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{Url.Action(nameof(ExternalLogin), "Authentication")}"
+            };
+            
+            return Ok(config);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public IActionResult TestOAuthConfig()
+    {
+        try
+        {
+            // Get the configuration from the service
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var googleOAuthSection = configuration.GetSection("OAuth:GoogleOAuth");
+            
+            var config = new
+            {
+                HasOAuthSection = googleOAuthSection.Exists(),
+                ClientId = googleOAuthSection["ClientId"],
+                HasClientSecret = !string.IsNullOrEmpty(googleOAuthSection["ClientSecret"]),
+                CallbackPath = googleOAuthSection["CallbackPath"],
+                EnvironmentVariables = new
+                {
+                    HasClientId = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_ID")),
+                    HasClientSecret = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CLIENT_SECRET")),
+                    CallbackPath = Environment.GetEnvironmentVariable("GOOGLE_OAUTH_CALLBACK_PATH")
+                }
             };
             
             return Ok(config);

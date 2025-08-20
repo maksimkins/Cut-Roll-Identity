@@ -60,12 +60,19 @@ public static class InitAuthMethod
                     OnRemoteFailure = context =>
                     {
                         context.HandleResponse();
-                        context.Response.Redirect("/error?message=" + context?.Failure?.Message);
+                        var errorMessage = context?.Failure?.Message ?? "Unknown OAuth error";
+                        Console.WriteLine($"OAuth Remote Failure: {errorMessage}");
+                        context?.Response.Redirect($"/Authentication/Error?message={Uri.EscapeDataString(errorMessage)}");
                         return Task.CompletedTask;
                     },
                     OnTicketReceived = context =>
                     {
-                        // Log successful authentication
+                        Console.WriteLine("OAuth Ticket Received Successfully");
+                        return Task.CompletedTask;
+                    },
+                    OnCreatingTicket = context =>
+                    {
+                        Console.WriteLine("OAuth Creating Ticket");
                         return Task.CompletedTask;
                     }
                 };
