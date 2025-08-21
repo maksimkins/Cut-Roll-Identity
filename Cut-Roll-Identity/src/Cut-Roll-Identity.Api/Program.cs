@@ -1,7 +1,6 @@
 using Cut_Roll_Identity.Api.Common.Extensions.ServiceCollection;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
 using Cut_Roll_Identity.Api.Common.Extensions.WebApplicationBuilder;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);

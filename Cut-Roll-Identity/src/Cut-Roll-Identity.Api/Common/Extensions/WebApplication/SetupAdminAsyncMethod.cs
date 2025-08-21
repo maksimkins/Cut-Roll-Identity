@@ -2,6 +2,9 @@ namespace Cut_Roll_Identity.Api.Common.Extensions.WebApplication;
 
 using Cut_Roll_Identity.Core.Authentication.Services;
 using Cut_Roll_Identity.Core.Blob.Managers;
+using Cut_Roll_Identity.Core.Common.Services;
+using Cut_Roll_Identity.Core.Roles.Enums;
+using Cut_Roll_Identity.Core.Roles.Services;
 using Cut_Roll_Identity.Core.Users.Models;
 using Cut_Roll_Identity.Core.Users.Services;
 using Microsoft.AspNetCore.Builder;
@@ -20,18 +23,59 @@ public static class SetupAdminAsyncMethod
             {
                 var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
                 var count = await userService.GetCountAsync();
-                if(count == 0)
+                if (count == 0)
                 {
                     var identityAuthService = scope.ServiceProvider.GetRequiredService<IIdentityAuthService>();
                     var blobImageManager = scope.ServiceProvider.GetRequiredService<BaseBlobImageManager<string>>();
-                    await identityAuthService.RegisterAsync(new User(){
+                    var messageBrokerService = scope.ServiceProvider.GetRequiredService<IMessageBrokerService>();
+                    var roleService = scope.ServiceProvider.GetRequiredService<IRoleService>();
+                    var admin = new User()
+                    {
                         UserName = adminUsername,
                         Email = adminEmail,
                         EmailConfirmed = true,
                         IsBanned = false,
                         IsMuted = false,
                         AvatarPath = blobImageManager.GetDefaultImageUrl(),
-                    }, adminPassword);
+                    };
+                    await userService.CreateUserAsync(admin, adminPassword);
+                    var created = await userService.GetUserByEmailAsync(adminEmail);
+                    await userService.AssignRoleToUserAsync(created.Id, UserRoles.Admin);
+
+                    var defaultRole = UserRoles.Admin;
+                    var defaultRoleId = await roleService.GetRoleIdByName(defaultRole);
+
+
+                    await messageBrokerService.PushAsync("user_create_admin", new
+                    {
+                        UserName = created.UserName,
+                        Id = created.Id,
+                        RoleId = defaultRoleId,
+                        Email = created.Email,
+                        IsBanned = false,
+                        IsMuted = false,
+                        AvatarPath = created.AvatarPath
+                    });
+
+                    await messageBrokerService.PushAsync("user_create_news", new
+                    {
+                        UserName = created.UserName,
+                        Id = created.Id,
+                        Email = created.Email,
+                        IsBanned = false,
+                        IsMuted = false,
+                        AvatarPath = created.AvatarPath
+                    });
+
+                    await messageBrokerService.PushAsync("user_create_users", new
+                    {
+                        UserName = created.UserName,
+                        Id = created.Id,
+                        Email = created.Email,
+                        IsBanned = false,
+                        IsMuted = false,
+                        AvatarPath = created.AvatarPath
+                    });
                 }
 
             }
