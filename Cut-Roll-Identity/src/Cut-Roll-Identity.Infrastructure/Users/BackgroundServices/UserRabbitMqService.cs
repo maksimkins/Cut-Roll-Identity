@@ -29,6 +29,7 @@ public class UserRabbitMqService: BaseRabbitMqService, IHostedService
             }
         });
 
+
         base.StartListening("user_togglemute_identity", async message => {
 
             using (var scope = base.serviceScopeFactory.CreateScope())

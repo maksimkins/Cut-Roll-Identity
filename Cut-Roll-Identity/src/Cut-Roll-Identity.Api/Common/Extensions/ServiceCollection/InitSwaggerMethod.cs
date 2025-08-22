@@ -15,6 +15,11 @@ public static class InitSwaggerMethod
                 Version = "v1",
             });
 
+            options.AddServer(new OpenApiServer
+            {
+                Url = $"{"https://cutnroll.it.com"}/api/identity"
+            });
+
             options.AddSecurityDefinition(
                 name: JwtBearerDefaults.AuthenticationScheme,
                 securityScheme: new OpenApiSecurityScheme()
