@@ -120,7 +120,7 @@ public class AuthenticationController : ControllerBase
             
             // Check if we have the authentication result
             Console.WriteLine("Attempting to authenticate with IdentityConstants.ExternalScheme...");
-            var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+            var result = await HttpContext.AuthenticateAsync("Google");
             
             Console.WriteLine($"Authentication result - Succeeded: {result?.Succeeded}");
             Console.WriteLine($"Authentication result - Principal: {(result?.Principal != null ? "Present" : "Null")}");
