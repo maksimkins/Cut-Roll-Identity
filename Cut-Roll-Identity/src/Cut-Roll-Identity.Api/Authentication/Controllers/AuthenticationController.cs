@@ -76,12 +76,7 @@ public class AuthenticationController : ControllerBase
             await _identityAuthService.RegisterAsync(user, registrationDto.Password);
             var confirmationToken = await _identityAuthService.GenerateEmailConfirmationTokenAsync(user);
 
-            var confirmationLink = Url.Action(
-                "ConfirmEmail",
-                "Authentication",
-                new { userId = user.Id, token = confirmationToken },
-                protocol: HttpContext.Request.Scheme
-            );
+            var confirmationLink = $"https://cutnroll.it.com/emailConfirmed?userId={user.Id}&token={Uri.EscapeDataString(confirmationToken)}";
     
             await _identityAuthService.SendConfirmationEmail(user.Email, confirmationLink!);
 

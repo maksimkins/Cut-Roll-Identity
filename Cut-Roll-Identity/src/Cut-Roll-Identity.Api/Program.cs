@@ -65,9 +65,6 @@ forwardedHeaderOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeaderOptions);
 
 
-            
-
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
