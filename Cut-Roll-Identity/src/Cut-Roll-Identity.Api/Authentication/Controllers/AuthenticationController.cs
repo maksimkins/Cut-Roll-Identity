@@ -76,7 +76,7 @@ public class AuthenticationController : ControllerBase
             await _identityAuthService.RegisterAsync(user, registrationDto.Password);
             var confirmationToken = await _identityAuthService.GenerateEmailConfirmationTokenAsync(user);
 
-            var confirmationLink = $"https://cutnroll.it.com/emailConfirmed?userId={user.Id}&token={Uri.EscapeDataString(confirmationToken)}";
+            var confirmationLink = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/api/identity/Authentication/ConfirmEmail?userId={user.Id}&token={Uri.EscapeDataString(confirmationToken)}";
     
             await _identityAuthService.SendConfirmationEmail(user.Email, confirmationLink!);
 
@@ -188,7 +188,13 @@ public class AuthenticationController : ControllerBase
         {
             var result = await _identityAuthService.ConfirmEmail(userId, token);
 
-            return result.Succeeded ? Ok() : BadRequest(error: result.Errors);
+            if (result.Succeeded)
+            {
+                return Redirect($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/emailConfirmed");
+            }
+
+            // if failed, you can redirect to a failure page, or still return BadRequest
+            return BadRequest(result.Errors);
         }
         catch(ArgumentException exception)
         {
